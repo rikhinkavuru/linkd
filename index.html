@@ -1,0 +1,2850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Linkd — A daily word chain puzzle</title>
+<meta name="description" content="Build the chain. Each word links to the next. Three difficulty modes." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ─── Tokens ─── */
+  :root {
+    --bg: #f4ecd8;
+    --bg-soft: #ebe2c9;
+    --bg-card: #faf3e0;
+    --ink: #1a1a1a;
+    --ink-soft: #3a3a3a;
+    --ink-muted: #6b665a;
+    --ink-faint: #a8a294;
+    --rule: #c9c0a8;
+    --rule-strong: #1a1a1a;
+    --accent: #d62828;
+    --accent-soft: #f5cfcf;
+    --accent-bg: rgba(214, 40, 40, 0.08);
+    --link-cool: #1a4d8c;
+    --correct: #2d5e2e;
+    --correct-soft: #d6e6d6;
+    --close: #8a6b1a;
+    --far: #d62828;
+
+    --display: 'Archivo', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: var(--mono);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    background-image:
+      radial-gradient(ellipse at 25% 0%, rgba(214, 40, 40, 0.035) 0%, transparent 55%),
+      radial-gradient(ellipse at 75% 100%, rgba(26, 26, 26, 0.04) 0%, transparent 60%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.10  0 0 0 0 0.10  0 0 0 0.16 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(26,26,26,0.018) 3px, rgba(26,26,26,0.018) 4px);
+    background-size: auto, auto, 220px 220px, auto;
+    background-attachment: fixed, fixed, fixed, fixed;
+  }
+
+  .app {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 28px 22px 60px;
+    /* dvh shrinks when iOS keyboard appears; vh fallback for older browsers */
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ─── Nav ─── */
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1.5px solid var(--ink);
+    margin-bottom: 32px;
+  }
+
+  .wordmark {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    user-select: none;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .wordmark .accent {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  .nav-actions {
+    display: flex;
+    gap: 0;
+  }
+
+  .nav-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: color 0.12s, background 0.12s;
+  }
+
+  .nav-link:hover {
+    color: var(--ink);
+    background: var(--accent-bg);
+  }
+
+  /* ─── Section header (used in result view only) ─── */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .head-meta {
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+
+  .head-difficulty {
+    color: var(--ink);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .head-difficulty .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--correct);
+    display: inline-block;
+  }
+  .head-difficulty[data-mode="medium"] .dot { background: var(--close); }
+  .head-difficulty[data-mode="hard"] .dot { background: var(--accent); }
+
+  /* ─── Compact top strip for game view (replaces headline + section + status) ─── */
+  .game-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0 16px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    flex-wrap: wrap;
+  }
+
+  .game-top-left,
+  .game-top-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .game-top-meta {
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+
+  .game-top-sep {
+    color: var(--ink-faint);
+    font-weight: 700;
+  }
+
+  .game-top-progress {
+    color: var(--ink);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .strikes-dots {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .strike-dot {
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    transition: background 0.3s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .strike-dot.used {
+    background: var(--accent);
+    animation: strikeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes strikeIn {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  /* ─── Chain display ─── */
+  .chain {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 22px;
+    border: 1.5px solid var(--ink);
+    background: var(--bg-card);
+  }
+
+  .chain-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    height: 56px;
+    border-bottom: 1px solid var(--ink);
+    transition: background 0.2s;
+    position: relative;
+  }
+
+  .chain-row:last-child {
+    border-bottom: none;
+  }
+
+  .chain-row[data-state="solved"] {
+    background: var(--correct-soft);
+  }
+
+  .chain-row[data-state="active"] {
+    background: var(--accent-soft);
+  }
+
+  .chain-row[data-state="seed"] {
+    background: var(--bg);
+  }
+
+  .chain-row.shake {
+    animation: shake 0.5s;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .chain-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    width: 18px;
+    flex-shrink: 0;
+  }
+
+  .chain-row[data-state="solved"] .chain-num,
+  .chain-row[data-state="seed"] .chain-num {
+    color: var(--ink);
+  }
+
+  .chain-row[data-state="active"] .chain-num {
+    color: var(--accent);
+  }
+
+  .chain-word {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .chain-row[data-state="active"] .chain-word {
+    color: var(--accent);
+  }
+
+  .chain-letter {
+    display: inline-block;
+  }
+
+  .chain-letter.hidden {
+    color: var(--ink-faint);
+    opacity: 0.5;
+    min-width: 0.6em;
+    text-align: center;
+  }
+
+  .chain-link-icon {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .chain-row[data-state="locked"] .chain-word,
+  .chain-row[data-state="locked"] .chain-num {
+    color: var(--ink-faint);
+  }
+
+  /* ─── Play bar: active-word prompt + hint button on one tight row ─── */
+  .play-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px;
+    min-height: 36px;
+  }
+
+  .play-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.4;
+  }
+
+  .play-hint strong {
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .play-hint .play-hint-sep {
+    color: var(--ink-faint);
+    margin: 0 6px;
+  }
+
+  .hint-btn {
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 7px 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .hint-btn .hint-icon {
+    color: var(--accent);
+    font-weight: 800;
+  }
+
+  .hint-btn .hint-btn-count {
+    color: var(--ink-muted);
+    font-weight: 700;
+    font-size: 10px;
+    margin-left: 2px;
+    padding-left: 8px;
+    border-left: 1px solid var(--rule);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hint-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .hint-btn:hover:not(:disabled) .hint-icon,
+  .hint-btn:hover:not(:disabled) .hint-btn-count {
+    color: var(--bg);
+    border-left-color: rgba(255,255,255,0.4);
+  }
+
+  .hint-btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  .hint-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .chain-row.just-revealed {
+    animation: justRevealed 0.6s ease;
+  }
+
+  @keyframes justRevealed {
+    0% { background: transparent; }
+    30% { background: rgba(214, 40, 40, 0.12); }
+    100% { background: transparent; }
+  }
+
+  /* Typo feedback — softer than a strike */
+  .guess-display.typo {
+    border-color: var(--close);
+    background: rgba(138, 107, 26, 0.08);
+  }
+
+  /* Result: hints used line */
+  .result-meta-line {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .result-meta-line strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* ─── Buttons ─── */
+  .btn {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 9px 18px;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .btn-primary:disabled {
+    background: transparent;
+    color: var(--ink-faint);
+    border-color: var(--ink-faint);
+    cursor: not-allowed;
+  }
+
+  /* ─── Difficulty selector ─── */
+  .difficulty-pick {
+    margin-bottom: 18px;
+  }
+
+  .difficulty-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .difficulty-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1.5px solid var(--ink);
+  }
+
+  .difficulty-btn {
+    background: var(--bg);
+    border: none;
+    border-right: 1px solid var(--ink);
+    padding: 12px 8px;
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .difficulty-btn:last-child { border-right: none; }
+
+  .difficulty-btn:hover {
+    background: var(--bg-soft);
+  }
+
+  .difficulty-btn[data-active="true"] {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .diff-name {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .diff-desc {
+    font-size: 9px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: block;
+  }
+
+  .difficulty-btn[data-active="true"] .diff-desc {
+    color: var(--ink-faint);
+  }
+
+  /* ─── Result ─── */
+  .result {
+    margin: 24px 0 32px;
+  }
+
+  .result-tier-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .result-tier {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 6px 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border: 1.5px solid var(--accent);
+  }
+
+  .result-tier.fail {
+    color: var(--ink);
+    background: var(--bg-soft);
+    border-color: var(--ink);
+  }
+
+  .result-mode-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink);
+    background: var(--bg);
+    padding: 6px 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border: 1.5px solid var(--ink);
+  }
+
+  .result-score {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(64px, 16vw, 110px);
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .result-score .of {
+    color: var(--ink-faint);
+    font-size: 0.32em;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  .result-blurb {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  .result-emojis {
+    font-size: 26px;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+    line-height: 1;
+  }
+
+  .result-emojis span {
+    display: inline-block;
+    animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .result-emojis span:nth-child(1) { animation-delay: 0.2s; }
+  .result-emojis span:nth-child(2) { animation-delay: 0.27s; }
+  .result-emojis span:nth-child(3) { animation-delay: 0.34s; }
+  .result-emojis span:nth-child(4) { animation-delay: 0.41s; }
+  .result-emojis span:nth-child(5) { animation-delay: 0.48s; }
+  .result-emojis span:nth-child(6) { animation-delay: 0.55s; }
+  .result-emojis span:nth-child(7) { animation-delay: 0.62s; }
+  .result-emojis span:nth-child(8) { animation-delay: 0.69s; }
+  .result-emojis span:nth-child(9) { animation-delay: 0.76s; }
+  .result-emojis span:nth-child(10) { animation-delay: 0.83s; }
+
+  .result-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* ─── Reveal full chain ─── */
+  .reveal-section {
+    margin-top: 32px;
+    padding-top: 18px;
+    border-top: 1.5px solid var(--ink);
+  }
+
+  .reveal-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .reveal-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reveal-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule);
+    animation: slideIn 0.4s ease-out both;
+  }
+  .reveal-row:last-child { border-bottom: none; }
+  .reveal-row:nth-child(1) { animation-delay: 0.3s; }
+  .reveal-row:nth-child(2) { animation-delay: 0.4s; }
+  .reveal-row:nth-child(3) { animation-delay: 0.5s; }
+  .reveal-row:nth-child(4) { animation-delay: 0.6s; }
+  .reveal-row:nth-child(5) { animation-delay: 0.7s; }
+  .reveal-row:nth-child(6) { animation-delay: 0.8s; }
+  .reveal-row:nth-child(7) { animation-delay: 0.9s; }
+  .reveal-row:nth-child(8) { animation-delay: 1.0s; }
+  .reveal-row:nth-child(9) { animation-delay: 1.1s; }
+  .reveal-row:nth-child(10) { animation-delay: 1.2s; }
+
+  .reveal-rank {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-weight: 700;
+  }
+
+  .reveal-word {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .reveal-mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+  }
+
+  .reveal-mark.solved { color: var(--correct); }
+  .reveal-mark.unsolved { color: var(--accent); }
+
+  /* Compound "bridge" shown between rows in the reveal */
+  .reveal-bridge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    padding: 3px 14px 3px 40px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .reveal-bridge .bridge-arrow {
+    color: var(--ink-faint);
+    font-weight: 700;
+  }
+
+  .reveal-bridge .bridge-compound {
+    color: var(--accent);
+    font-family: var(--display);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    font-size: 12px;
+  }
+
+  /* ─── Modal ─── */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 26, 0.5);
+    z-index: 100;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 6vh 16px 30px;
+    overflow-y: auto;
+  }
+
+  .modal-bg.show {
+    display: flex;
+    animation: fade 0.2s ease;
+  }
+
+  .modal {
+    background: var(--bg);
+    border: 1.5px solid var(--ink);
+    max-width: 460px;
+    width: 100%;
+    padding: 26px 24px 22px;
+    position: relative;
+    animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    width: 30px;
+    height: 30px;
+    font-family: var(--mono);
+    font-weight: 700;
+    transition: background 0.15s, color 0.15s;
+  }
+  .modal-close:hover { background: var(--ink); color: var(--bg); }
+
+  .modal-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .modal h2 {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+
+  .modal h2 .accent { color: var(--accent); font-style: italic; font-weight: 700; }
+
+  .modal p {
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.65;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .modal h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    margin: 20px 0 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--ink);
+    padding-top: 14px;
+  }
+
+  .modal h3:first-of-type { margin-top: 18px; }
+
+  .modal .example {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--ink);
+    background: var(--bg-card);
+    border: 1px solid var(--ink);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .modal .example .arrow {
+    color: var(--ink-muted);
+    margin: 0 8px;
+    font-weight: 500;
+  }
+
+  .modal .example .blank {
+    color: var(--accent);
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    margin-bottom: 4px;
+    border: 1.5px solid var(--ink);
+  }
+
+  .stat-card {
+    text-align: center;
+    padding: 14px 8px;
+    border-right: 1px solid var(--ink);
+  }
+  .stat-card:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 5px;
+    color: var(--ink);
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-muted);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .recent-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .recent-row:last-child { border-bottom: none; }
+  .recent-puzzle { color: var(--ink-soft); font-weight: 500; }
+  .recent-mode {
+    color: var(--ink-muted);
+    font-size: 9px;
+    margin-left: 6px;
+    background: var(--bg-card);
+    padding: 2px 6px;
+    border: 1px solid var(--ink-faint);
+  }
+  .recent-score { color: var(--ink); font-weight: 700; font-size: 13px; }
+
+  /* Friends */
+  .input-field {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink);
+    padding: 10px 12px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: background 0.15s;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .input-field:focus { background: var(--bg); }
+
+  textarea.input-field {
+    font-size: 11px;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 70px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .friend-row-input {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .friend-row-input .input-field { margin-bottom: 0; }
+
+  .leaderboard-section {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--ink);
+  }
+
+  .ranking-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    margin-bottom: 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    border-bottom: 1px solid var(--rule);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .ranking-row:last-child { border-bottom: none; }
+
+  .ranking-row.you {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    border-color: var(--accent);
+  }
+
+  .ranking-row .left { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .ranking-rank { color: var(--ink-muted); font-size: 10px; min-width: 18px; font-weight: 700; }
+  .ranking-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ranking-mode {
+    color: var(--ink-muted);
+    font-size: 9px;
+    background: var(--bg-card);
+    padding: 1px 5px;
+    border: 1px solid var(--ink-faint);
+  }
+  .ranking-score { font-weight: 700; flex-shrink: 0; font-size: 13px; }
+  .ranking-score .of { font-size: 10px; font-weight: 500; }
+
+  .friend-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .friend-list-row:last-child { border-bottom: none; }
+
+  .friend-delete {
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    font-family: var(--mono);
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+  .friend-delete:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  .empty-state {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 14px 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(200%);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 20px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    z-index: 200;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1.5px solid var(--ink);
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Animations */
+  @keyframes pop {
+    0% { opacity: 0; transform: scale(0); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes modalIn {
+    0% { opacity: 0; transform: translateY(10px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes solveFlash {
+    0% { background: var(--correct); }
+    100% { background: var(--correct-soft); }
+  }
+  .chain-row.just-solved {
+    animation: solveFlash 0.6s ease-out;
+  }
+
+  /* ─── Guess display (replaces native input) ─── */
+  .guess-display {
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink);
+    padding: 14px 16px;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 22px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    margin-bottom: 14px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .guess-display.empty .guess-display-text::before {
+    content: attr(data-placeholder);
+    color: var(--ink-faint);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+  }
+
+  .guess-display.shake {
+    animation: shake 0.5s;
+  }
+
+  .guess-display-cursor {
+    display: inline-block;
+    color: var(--accent);
+    font-weight: 400;
+    margin-left: 2px;
+    animation: blink 1s steps(2) infinite;
+  }
+
+  .guess-display.empty .guess-display-cursor {
+    display: none;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* ─── On-screen keyboard ─── */
+  .keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .kb-row {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .kb-key {
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.1s, color 0.1s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .kb-key:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .kb-key:active:not(:disabled) {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    transform: scale(0.94);
+  }
+
+  .kb-key:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .kb-key.flash {
+    animation: keyFlash 0.2s ease-out;
+  }
+
+  @keyframes keyFlash {
+    0% { background: var(--accent); color: var(--bg); transform: scale(0.94); }
+    100% { background: var(--bg-card); color: var(--ink); transform: scale(1); }
+  }
+
+  .kb-key-wide {
+    flex: 1.5;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .kb-spacer {
+    flex: 0.5;
+    min-width: 0;
+  }
+
+  /* ─── Startup gate ─── */
+  /* Blur the game while difficulty hasn't been picked yet */
+  .app.locked > main {
+    filter: blur(8px);
+    pointer-events: none;
+    user-select: none;
+    transition: filter 0.3s ease;
+  }
+
+  .startup-modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(244, 236, 216, 0.4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 99;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fade 0.3s ease;
+  }
+
+  .startup-modal {
+    background: var(--bg);
+    border: 1.5px solid var(--ink);
+    max-width: 440px;
+    width: 100%;
+    padding: 32px 28px 26px;
+    position: relative;
+    animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+
+  .startup-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .startup-title {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 44px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .startup-title .accent {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  .startup-tag {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 24px;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  .startup-difficulty {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  /* Difficulty cards: colored left bar carries the difficulty signal —
+     no need for a right-side pill. */
+  .startup-diff-btn {
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink);
+    border-left-width: 6px;
+    padding: 16px 18px;
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .startup-diff-btn[data-diff="easy"]   { border-left-color: var(--correct); }
+  .startup-diff-btn[data-diff="medium"] { border-left-color: var(--close); }
+  .startup-diff-btn[data-diff="hard"]   { border-left-color: var(--accent); }
+
+  .startup-diff-btn:hover {
+    background: var(--ink);
+    color: var(--bg);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  .startup-diff-btn .name {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .startup-diff-btn .desc {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .startup-diff-btn:hover .desc {
+    color: var(--ink-faint);
+  }
+
+  .startup-foot {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* ─── App Store promo (subtle, end-of-result placement) ─── */
+  .app-promo {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .app-promo-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .app-promo-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink);
+    border-left-width: 5px;
+    border-left-color: var(--accent);
+    text-decoration: none;
+    color: var(--ink);
+    font-family: var(--mono);
+    transition: background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+  }
+
+  .app-promo-card:hover {
+    background: var(--ink);
+    color: var(--bg);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  .app-promo-text { min-width: 0; }
+
+  .app-promo-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .app-promo-sub {
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    margin-top: 5px;
+    line-height: 1.3;
+  }
+
+  .app-promo-card:hover .app-promo-sub {
+    color: var(--ink-faint);
+  }
+
+  .app-promo-cta {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .app-promo-cta .arrow {
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .app-promo-card:hover .app-promo-cta .arrow {
+    color: var(--bg);
+  }
+
+  /* ─── Site footer (just a subtle "certified" badge) ─── */
+  .site-foot {
+    margin-top: 36px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cert-badge {
+    display: inline-flex;
+    opacity: 0.55;
+    transition: opacity 0.2s;
+    line-height: 0;
+  }
+
+  .cert-badge:hover {
+    opacity: 1;
+  }
+
+  .cert-badge img {
+    height: 28px;
+    width: auto;
+    display: block;
+  }
+
+  /* Subtle in-modal link */
+  .modal-link {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1.5px solid var(--accent);
+    font-weight: 700;
+    padding-bottom: 1px;
+    transition: color 0.12s, border-color 0.12s;
+  }
+
+  .modal-link:hover { color: var(--accent); }
+
+  .modal-link .ext {
+    color: var(--accent);
+    margin-left: 4px;
+    font-weight: 800;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ─── Responsive ───
+     Mobile-first: base styles target small phones (≤380px).
+     Each breakpoint scales UP for larger devices.
+
+     Tiers:
+       Base       — small phones, ≤480px
+       SM (481+)  — large phones / phablets
+       MD (768+)  — tablets portrait, small laptops
+       LG (1024+) — laptops, desktops
+  */
+
+  /* Small phone (≤480px) — BASE */
+  .app { padding: 14px 14px 24px; max-width: 100%; }
+  .nav { margin-bottom: 14px; padding-bottom: 10px; }
+  .wordmark { font-size: 18px; }
+  .nav-link { padding: 5px 8px; font-size: 10px; letter-spacing: 0.06em; }
+  .section-head { font-size: 10px; margin-bottom: 10px; }
+  .chain-row { height: 44px; padding: 0 12px; gap: 10px; }
+  .chain-word { font-size: 16px; }
+  .chain-num { font-size: 10px; width: 16px; }
+  .btn { font-size: 10px; padding: 8px 14px; letter-spacing: 0.06em; }
+  .strike-dot { width: 10px; height: 10px; }
+  .result-score { font-size: 56px; }
+  .result-tier, .result-mode-tag { font-size: 9px; padding: 5px 10px; letter-spacing: 0.08em; }
+  .result-blurb { font-size: 11px; margin-bottom: 18px; }
+  .result-emojis { font-size: 22px; letter-spacing: 4px; }
+  .reveal-word { font-size: 16px; }
+  .reveal-rank { font-size: 10px; }
+  .modal { padding: 22px 18px 18px; }
+  .modal h2 { font-size: 22px; }
+  .modal p { font-size: 11px; }
+  .stat-num { font-size: 20px; }
+  .stat-label { font-size: 8px; }
+  .startup-modal { padding: 24px 20px 18px; }
+  .startup-title { font-size: 36px; }
+  .startup-tag { font-size: 11px; margin-bottom: 20px; }
+  .startup-diff-btn { padding: 12px 14px; }
+  .startup-diff-btn .name { font-size: 16px; }
+  .startup-diff-btn .desc { font-size: 9px; }
+  .startup-foot { font-size: 9px; }
+
+  /* On-screen keyboard sizing — base mobile */
+  .kb-key { height: 42px; font-size: 13px; }
+  .kb-key-wide { font-size: 10px; }
+  .kb-row { gap: 4px; }
+  .keyboard { gap: 4px; margin-top: 0; }
+  .chain { margin-bottom: 10px; }
+  .guess-display { font-size: 18px; min-height: 44px; padding: 8px 12px; margin-bottom: 6px; }
+
+  /* Very narrow phones (iPhone SE, ≤360px) */
+  @media (max-width: 360px) {
+    .app { padding: 10px 10px 20px; }
+    .nav { margin-bottom: 10px; padding-bottom: 8px; }
+    .nav-link { padding: 4px 6px; font-size: 9px; letter-spacing: 0.04em; }
+    .wordmark { font-size: 16px; }
+    .game-top { padding: 10px 0 12px; margin-bottom: 14px; font-size: 10px; }
+    .chain-row { height: 40px; padding: 0 10px; }
+    .chain-word { font-size: 15px; }
+    .play-bar { margin-bottom: 8px; }
+    .play-hint { font-size: 10px; letter-spacing: 0.04em; }
+    .hint-btn { font-size: 10px; padding: 6px 10px; }
+    .result-score { font-size: 48px; }
+    .startup-title { font-size: 30px; }
+    .startup-diff-btn .name { font-size: 14px; }
+    .kb-key { height: 38px; font-size: 12px; }
+    .kb-key-wide { font-size: 9px; }
+    .kb-row { gap: 3px; }
+    .keyboard { gap: 3px; }
+    .chain { margin-bottom: 8px; }
+    .guess-display { font-size: 16px; min-height: 40px; padding: 6px 10px; margin-bottom: 4px; }
+  }
+
+  /* SM: large phones / phablets (481px+) */
+  @media (min-width: 481px) {
+    .app { max-width: 480px; padding: 18px 20px 30px; }
+    .nav { margin-bottom: 18px; padding-bottom: 12px; }
+    .wordmark { font-size: 20px; }
+    .nav-link { padding: 6px 10px; font-size: 11px; letter-spacing: 0.08em; }
+    .section-head { font-size: 11px; margin-bottom: 12px; }
+    .chain-row { height: 48px; padding: 0 14px; gap: 12px; }
+    .chain-word { font-size: 18px; }
+    .chain-num { font-size: 11px; width: 18px; }
+    .btn { font-size: 11px; padding: 9px 18px; letter-spacing: 0.08em; }
+    .strike-dot { width: 11px; height: 11px; }
+    .result-score { font-size: 80px; }
+    .result-tier, .result-mode-tag { font-size: 10px; padding: 6px 12px; letter-spacing: 0.12em; }
+    .result-blurb { font-size: 13px; margin-bottom: 22px; }
+    .result-emojis { font-size: 26px; letter-spacing: 5px; }
+    .reveal-word { font-size: 18px; }
+    .reveal-rank { font-size: 11px; }
+    .modal { padding: 26px 24px 22px; }
+    .modal h2 { font-size: 26px; }
+    .modal p { font-size: 12px; }
+    .stat-num { font-size: 24px; }
+    .stat-label { font-size: 9px; }
+    .startup-modal { padding: 30px 26px 22px; }
+    .startup-title { font-size: 42px; }
+    .startup-tag { font-size: 12px; margin-bottom: 22px; }
+    .startup-diff-btn { padding: 14px 16px; }
+    .startup-diff-btn .name { font-size: 18px; }
+    .startup-diff-btn .desc { font-size: 10px; }
+    .startup-foot { font-size: 10px; }
+    .kb-key { height: 46px; font-size: 14px; }
+    .kb-key-wide { font-size: 11px; }
+    .kb-row { gap: 5px; }
+    .keyboard { gap: 5px; margin-top: 0; }
+    .chain { margin-bottom: 12px; }
+    .guess-display { font-size: 20px; min-height: 50px; padding: 10px 14px; margin-bottom: 8px; }
+  }
+
+  /* MD: tablets portrait, small laptops (768px+) */
+  @media (min-width: 768px) {
+    .app { max-width: 540px; padding: 32px 24px 80px; }
+    .chain-row { height: 58px; padding: 0 16px; }
+    .chain-word { font-size: 20px; }
+    .result-score { font-size: 96px; }
+    .startup-modal { max-width: 460px; padding: 34px 30px 26px; }
+    .startup-title { font-size: 48px; }
+  }
+
+  /* LG: laptops, desktops (1024px+) */
+  @media (min-width: 1024px) {
+    .app { max-width: 580px; padding: 40px 28px 100px; }
+    .chain-row { height: 62px; padding: 0 18px; }
+    .chain-word { font-size: 22px; }
+    .chain-num { font-size: 12px; }
+    .result-score { font-size: 108px; }
+    .reveal-word { font-size: 20px; }
+  }
+</style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="cec9cd34-0d6f-4615-855b-58a0733cf115"></script>
+</head>
+<body>
+<div class="app locked" id="appRoot">
+  <header class="nav">
+    <div class="wordmark">LIN<span class="accent">K</span>D</div>
+    <nav class="nav-actions">
+      <button class="nav-link" id="navStats">Stats</button>
+      <button class="nav-link" id="navFriends">Friends</button>
+      <button class="nav-link" id="navHelp">How</button>
+    </nav>
+  </header>
+
+  <main id="gameView">
+    <!-- One tight status strip replaces section-head + headline + status-bar -->
+    <div class="game-top">
+      <div class="game-top-left">
+        <span class="game-top-meta" id="puzzleNum">№ 1</span>
+        <span class="game-top-sep">·</span>
+        <span class="head-difficulty" id="headDifficulty" data-mode="easy">
+          <span class="dot"></span><span id="headDifficultyLabel">Easy</span>
+        </span>
+      </div>
+      <div class="game-top-right">
+        <span class="strikes-dots" id="strikesDots" aria-label="Strikes"></span>
+        <span class="game-top-sep">·</span>
+        <span class="game-top-progress" id="progressText">0/0</span>
+      </div>
+    </div>
+
+    <div class="chain" id="chain"></div>
+
+    <!-- Active-word prompt + hint button on one tight row -->
+    <div class="play-bar">
+      <div class="play-hint" id="hintText"></div>
+      <button class="hint-btn" id="hintBtn" type="button">
+        <span class="hint-icon">▸</span>
+        <span class="hint-btn-label">Hint</span>
+        <span class="hint-btn-count" id="hintCounter">3</span>
+      </button>
+    </div>
+
+    <!-- Visual display of current typed guess (instead of native input) -->
+    <div class="guess-display" id="guessDisplay">
+      <span class="guess-display-text" id="guessDisplayText"></span>
+      <span class="guess-display-cursor" id="guessDisplayCursor">|</span>
+    </div>
+
+    <!-- On-screen keyboard (Wordle-style) -->
+    <div class="keyboard" id="keyboard">
+      <div class="kb-row">
+        <button class="kb-key" data-key="Q">Q</button>
+        <button class="kb-key" data-key="W">W</button>
+        <button class="kb-key" data-key="E">E</button>
+        <button class="kb-key" data-key="R">R</button>
+        <button class="kb-key" data-key="T">T</button>
+        <button class="kb-key" data-key="Y">Y</button>
+        <button class="kb-key" data-key="U">U</button>
+        <button class="kb-key" data-key="I">I</button>
+        <button class="kb-key" data-key="O">O</button>
+        <button class="kb-key" data-key="P">P</button>
+      </div>
+      <div class="kb-row">
+        <div class="kb-spacer"></div>
+        <button class="kb-key" data-key="A">A</button>
+        <button class="kb-key" data-key="S">S</button>
+        <button class="kb-key" data-key="D">D</button>
+        <button class="kb-key" data-key="F">F</button>
+        <button class="kb-key" data-key="G">G</button>
+        <button class="kb-key" data-key="H">H</button>
+        <button class="kb-key" data-key="J">J</button>
+        <button class="kb-key" data-key="K">K</button>
+        <button class="kb-key" data-key="L">L</button>
+        <div class="kb-spacer"></div>
+      </div>
+      <div class="kb-row">
+        <button class="kb-key kb-key-wide" data-key="ENTER">Enter</button>
+        <button class="kb-key" data-key="Z">Z</button>
+        <button class="kb-key" data-key="X">X</button>
+        <button class="kb-key" data-key="C">C</button>
+        <button class="kb-key" data-key="V">V</button>
+        <button class="kb-key" data-key="B">B</button>
+        <button class="kb-key" data-key="N">N</button>
+        <button class="kb-key" data-key="M">M</button>
+        <button class="kb-key kb-key-wide" data-key="BACK">⌫</button>
+      </div>
+    </div>
+  </main>
+
+  <main id="resultView" style="display: none;">
+    <div class="section-head">
+      <span class="head-meta" id="puzzleNumResult">—</span>
+      <span class="head-difficulty" id="headDifficultyResult" data-mode="easy">
+        <span class="dot"></span><span id="headDifficultyResultLabel">Easy</span>
+      </span>
+    </div>
+
+    <div class="result">
+      <div class="result-tier-row">
+        <span class="result-tier" id="resultTier">—</span>
+        <span class="result-mode-tag" id="resultModeTag">—</span>
+      </div>
+      <div class="result-score"><span id="resultScore">0</span><span class="of" id="resultScoreOf">/0</span></div>
+      <div class="result-blurb" id="resultBlurb">—</div>
+      <div class="result-meta-line" id="resultMetaLine"></div>
+      <div class="result-emojis" id="resultEmojis"></div>
+      <div class="result-actions">
+        <button class="btn btn-primary" id="shareBtn">Share Result</button>
+        <button class="btn" id="compareBtn">Compare</button>
+        <button class="btn" id="replayBtn">Play Again</button>
+      </div>
+    </div>
+
+    <section class="reveal-section">
+      <div class="reveal-label">▸ The Full Chain</div>
+      <div class="reveal-chain" id="revealChain"></div>
+    </section>
+
+    <!-- Subtle App Store nudge at the very end of the result view.
+         No popup, no auto-trigger — just a card you scroll past. -->
+    <section class="app-promo">
+      <div class="app-promo-eyebrow">▸ Never miss a daily chain</div>
+      <a
+        class="app-promo-card"
+        href="https://apps.apple.com/us/app/linkd-daily-word-chain/id6765814020"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-umami-event="app-store-click"
+        data-umami-event-source="result"
+      >
+        <div class="app-promo-text">
+          <div class="app-promo-title">Get the iPhone app</div>
+          <div class="app-promo-sub">Daily reminders · offline play</div>
+        </div>
+        <span class="app-promo-cta">App&nbsp;Store <span class="arrow">→</span></span>
+      </a>
+    </section>
+  </main>
+
+  <!-- Subtle "certified" footer badge -->
+  <footer class="site-foot">
+    <a
+      class="cert-badge"
+      href="https://puzzled.online/?ref=cert-badge&amp;site=https%3A%2F%2Flinkddaily.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Certified Independent Puzzler"
+      data-umami-event="cert-badge-click"
+    >
+      <img
+        src="https://puzzled.online/badges/certified-slim-anim-light.svg"
+        alt="Certified Independent Puzzler"
+        loading="lazy"
+      />
+    </a>
+  </footer>
+</div>
+
+<!-- Help -->
+<div class="modal-bg" id="helpModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('helpModal')">×</button>
+    <div class="modal-eyebrow">▸ How to Play</div>
+    <h2>Build the <span class="accent">chain.</span></h2>
+    <p>Each puzzle is a chain of 6–10 words. Adjacent words always form a real compound word or common phrase.</p>
+
+    <div class="example">BLACK <span class="arrow">→</span> <span class="blank">O___</span></div>
+    <p style="margin-top: -4px;">First word given, plus a hint for the next. Guess it correctly and the chain continues:</p>
+    <div class="example">BLACK <span class="arrow">→</span> OUT <span class="arrow">→</span> <span class="blank">B___</span></div>
+    <p>BLACKOUT and OUTBACK — both real phrases.</p>
+
+    <h3>Typing</h3>
+    <p>Shown letters are free — you can <strong>type only the missing letters, or the full word</strong>. For <em>WH___</em> (target WHITE), all of <em>WHITE</em>, <em>HITE</em>, and <em>ITE</em> are accepted.</p>
+
+    <h3>Strikes</h3>
+    <p>You get <strong>4 wrong guesses</strong> total before the puzzle ends. Same chain for everyone.</p>
+    <p>If you type something that <strong>isn't a real English word</strong>, it doesn't cost a strike — just try again.</p>
+
+    <h3>Hints</h3>
+    <p>Stuck? Hit the <strong>▸ Hint</strong> button under the chain to reveal one more letter — no strike. Limited per puzzle:</p>
+    <p><strong>Easy:</strong> 3 hints · <strong>Medium:</strong> 2 hints · <strong>Hard:</strong> 1 hint.</p>
+
+    <h3>Difficulty</h3>
+    <p><strong>Easy:</strong> First two letters + word length. Strikes and hints reveal more.</p>
+    <p><strong>Medium:</strong> First letter + word length. Strikes and hints reveal more.</p>
+    <p><strong>Hard:</strong> First letter only — no length shown.</p>
+    <p>Your chosen difficulty is part of your share string — friends will know if you took the harder path.</p>
+
+    <h3>Compare with Friends</h3>
+    <p>Share your result. Friends do the same. Paste theirs into your Friends page to see leaderboards by mode and overall.</p>
+
+    <h3>Daily reminders</h3>
+    <p>Want a nudge each day plus offline play? <a class="modal-link" href="https://apps.apple.com/us/app/linkd-daily-word-chain/id6765814020" target="_blank" rel="noopener noreferrer" data-umami-event="app-store-click" data-umami-event-source="help">Linkd is on the App Store<span class="ext">↗</span></a></p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="modal-bg" id="statsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('statsModal')">×</button>
+    <div class="modal-eyebrow">▸ Your Record</div>
+    <h2>Stats</h2>
+    <div class="stats-grid" id="statsGrid"></div>
+    <h3>Recent Puzzles</h3>
+    <div id="recentList"></div>
+  </div>
+</div>
+
+<!-- Friends -->
+<div class="modal-bg" id="friendsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('friendsModal')">×</button>
+    <div class="modal-eyebrow">▸ Compare</div>
+    <h2>Friends</h2>
+    <p>Paste a friend's share string to add their result.</p>
+
+    <textarea class="input-field" id="friendInput" placeholder="Paste a Linkd result here…"></textarea>
+    <div class="friend-row-input">
+      <input type="text" class="input-field" id="friendName" placeholder="Friend's name" style="flex: 1;" />
+      <button class="btn btn-primary" id="addFriendBtn">Add</button>
+    </div>
+
+    <div class="leaderboard-section">
+      <h3 id="todayCompareTitle">Today's Leaderboard</h3>
+      <div id="todayCompareList"></div>
+    </div>
+    <div class="leaderboard-section">
+      <h3>All-Time</h3>
+      <div id="allTimeCompareList"></div>
+    </div>
+    <div id="friendsListSection"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<!-- Startup gate: difficulty selection before puzzle is revealed -->
+<div class="startup-modal-bg" id="startupGate">
+  <div class="startup-modal">
+    <div class="startup-eyebrow">▸ A daily word chain</div>
+    <h1 class="startup-title">Lin<span class="accent">k</span>d</h1>
+    <p class="startup-tag">Build the chain — each word links to the next.</p>
+
+    <div class="startup-difficulty">
+      <button class="startup-diff-btn" data-diff="easy">
+        <span class="name">Easy</span>
+        <span class="desc">First two letters + length · 3 hints</span>
+      </button>
+      <button class="startup-diff-btn" data-diff="medium">
+        <span class="name">Medium</span>
+        <span class="desc">First letter + length · 2 hints</span>
+      </button>
+      <button class="startup-diff-btn" data-diff="hard">
+        <span class="name">Hard</span>
+        <span class="desc">First letter only · 1 hint</span>
+      </button>
+    </div>
+
+    <div class="startup-foot" id="startupFoot">№ 1 · 4 strikes · typos don't count</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── Word dictionary for guess validation ───
+// ~9800 common English words. If a guess isn't in this set, treat as typo (no strike).
+const DICT_WORDS = "aa,aaa,aaron,ab,abandoned,abc,aberdeen,abilities,ability,able,aboriginal,abortion,about,above,abraham,abroad,abs,absence,absent,absolute,absolutely,absorption,abstract,abstracts,abu,abuse,ac,academic,academics,academy,acc,accent,accept,acceptable,acceptance,accepted,accepting,accepts,access,accessed,accessibility,accessible,accessing,accessories,accessory,accident,accidents,accommodate,accommodation,accommodations,accompanied,accompanying,accomplish,accomplished,accordance,according,accordingly,account,accountability,accounting,accounts,accreditation,accredited,accuracy,accurate,accurately,accused,ace,acer,achieve,achieved,achievement,achievements,achieving,acid,acids,acknowledge,acknowledged,acm,acne,acoustic,acquire,acquired,acquisition,acquisitions,acre,acres,acrobat,across,acrylic,act,acting,action,actions,activated,activation,active,actively,activists,activities,activity,actor,actors,actress,acts,actual,actually,acute,ad,ada,adam,adams,adaptation,adapted,adapter,adapters,adaptive,adaptor,add,added,addiction,adding,addition,additional,additionally,additions,address,addressed,addresses,addressing,adds,adelaide,adequate,adidas,adipex,adjacent,adjust,adjustable,adjusted,adjustment,adjustments,admin,administered,administration,administrative,administrator,administrators,admission,admissions,admit,admitted,adobe,adolescent,adopt,adopted,adoption,adrian,ads,adsl,adult,adults,advance,advanced,advancement,advances,advantage,advantages,adventure,adventures,adverse,advert,advertise,advertisement,advertisements,advertiser,advertisers,advertising,advice,advise,advised,advisor,advisors,advisory,advocacy,advocate,adware,ae,aerial,aerospace,af,affair,affairs,affect,affected,affecting,affects,affiliate,affiliated,affiliates,affiliation,afford,affordable,afghanistan,afraid,africa,african,after,afternoon,afterwards,ag,again,against,age,aged,agencies,agency,agenda,agent,agents,ages,aggregate,aggressive,aging,ago,agree,agreed,agreement,agreements,agrees,agricultural,agriculture,ah,ahead,ai,aid,aids,aim,aimed,aims,air,aircraft,airfare,airline,airlines,airplane,airport,airports,aj,ak,aka,al,ala,alabama,alan,alarm,alaska,albania,albany,albert,alberta,album,albums,albuquerque,alcohol,alert,alerts,alex,alexander,alexandria,alfred,algebra,algeria,algorithm,algorithms,ali,alias,alice,alien,align,alignment,alike,alive,all,allah,allan,alleged,allen,allergy,alliance,allied,allocated,allocation,allow,allowance,allowed,allowing,allows,alloy,almost,alone,along,alot,alpha,alphabetical,alpine,already,also,alt,alter,altered,alternate,alternative,alternatively,alternatives,although,alto,aluminium,aluminum,alumni,always,am,amanda,amateur,amazing,amazon,ambassador,amber,ambien,ambient,amd,amend,amended,amendment,amendments,amenities,america,american,americans,americas,amino,among,amongst,amount,amounts,amp,amplifier,amsterdam,amy,an,ana,anaheim,analog,analyses,analysis,analyst,analysts,analytical,analyze,analyzed,anatomy,anchor,ancient,and,andale,anderson,andorra,andrea,andreas,andrew,andrews,andy,angel,angela,angeles,angels,anger,angle,angola,angry,animal,animals,animated,animation,anime,ann,anna,anne,annex,annie,anniversary,annotated,annotation,announce,announced,announcement,announcements,announces,annoying,annual,annually,anonymous,another,answer,answered,answering,answers,ant,antarctica,antenna,anthony,anthropology,anti,antibodies,antibody,anticipated,antigua,antique,antiques,antivirus,antonio,anxiety,any,anybody,anymore,anyone,anything,anytime,anyway,anywhere,aol,ap,apache,apart,apartment,apartments,api,apnic,apollo,app,apparatus,apparel,apparent,apparently,appeal,appeals,appear,appearance,appeared,appearing,appears,appendix,apple,appliance,appliances,applicable,applicant,applicants,application,applications,applied,applies,apply,applying,appointed,appointment,appointments,appraisal,appreciate,appreciated,appreciation,approach,approaches,appropriate,appropriations,approval,approve,approved,approx,approximate,approximately,apps,apr,april,apt,aqua,aquarium,aquatic,ar,arab,arabia,arabic,arbitrary,arbitration,arbor,arc,arcade,arch,architect,architects,architectural,architecture,archive,archived,archives,arctic,are,area,areas,arena,arg,argentina,argue,argued,argument,arguments,arise,arising,arizona,arkansas,arlington,arm,armed,armenia,armor,arms,armstrong,army,arnold,around,arrange,arranged,arrangement,arrangements,array,arrest,arrested,arrival,arrivals,arrive,arrived,arrives,arrow,art,arthritis,arthur,article,articles,artificial,artist,artistic,artists,arts,artwork,aruba,as,asbestos,ascii,ash,ashley,asia,asian,aside,ask,asked,asking,asks,asn,asp,aspect,aspects,assault,assembled,assembly,assess,assessed,assessing,assessment,assessments,asset,assets,assign,assigned,assignment,assignments,assist,assistance,assistant,assisted,assists,associate,associated,associates,association,associations,assume,assumed,assumes,assuming,assumption,assumptions,assurance,assure,assured,asthma,astrology,astronomy,asus,asylum,at,ata,ate,athens,athletes,athletic,athletics,ati,atlanta,atlantic,atlas,atm,atmosphere,atmospheric,atom,atomic,attach,attached,attachments,attack,attacked,attacks,attempt,attempted,attempting,attempts,attend,attendance,attended,attending,attention,attitude,attitudes,attorney,attorneys,attract,attraction,attractions,attractive,attribute,attributes,au,auburn,auckland,auction,auctions,aud,audi,audience,audio,audit,auditor,aug,august,aurora,aus,austin,australia,australian,austria,authentic,authentication,author,authorities,authority,authorization,authorized,authors,auto,automated,automatic,automatically,automation,automobile,automobiles,automotive,autos,autumn,av,availability,available,avatar,ave,avenue,average,avg,avi,aviation,avoid,avoiding,avon,aw,award,awarded,awards,aware,awareness,away,awesome,awful,axis,aye,az,azerbaijan,ba,babe,babes,babies,baby,bachelor,back,backed,background,backgrounds,backing,backup,bacon,bacteria,bacterial,bad,badge,badly,bag,baghdad,bags,bahamas,bahrain,bailey,baker,baking,balance,balanced,bald,bali,ball,ballet,balloon,ballot,baltimore,ban,banana,band,bands,bandwidth,bang,bangkok,bangladesh,bank,banking,bankruptcy,banks,banned,banner,banners,baptist,bar,barbados,barbara,barbie,barcelona,bare,barely,bargain,bargains,barn,barnes,barrel,barrier,barriers,barry,bars,base,baseball,based,baseline,basement,basename,bases,basic,basically,basics,basin,basis,basket,basketball,baskets,bass,bat,batch,bath,bathroom,bathrooms,baths,batman,batteries,battery,battle,battlefield,bay,bb,bbc,bbs,bc,bd,be,beach,beaches,beads,beam,bean,beans,bear,bearing,bears,beast,beastality,beat,beater,beatles,beats,beautiful,beautifully,beauty,beaver,became,because,become,becomes,becoming,bed,bedding,bedford,bedroom,bedrooms,beds,bee,beef,been,beer,before,began,begin,beginner,beginners,beginning,begins,begun,behalf,behavior,behavioral,behaviour,behind,beijing,being,beings,belarus,belfast,belgium,belief,beliefs,believe,believed,believes,belize,belkin,bell,belle,belly,belong,belongs,below,belt,belts,ben,bench,benchmark,bend,beneath,beneficial,benefit,benefits,benjamin,bennett,bent,benz,berkeley,berlin,bermuda,bernard,berry,beside,besides,best,bestsellers,bet,beta,beth,better,betting,betty,between,beverage,beverages,beverly,beyond,bg,bhutan,bi,bias,bible,biblical,bibliographic,bibliography,bicycle,bid,bidder,bidding,bids,big,bigger,biggest,bike,bikes,bikini,bill,billing,billion,bills,billy,bin,binary,bind,binding,bingo,bio,biodiversity,biographies,biography,biol,biological,biology,bios,biotechnology,bird,birds,birmingham,birth,birthday,bishop,bit,bite,bits,biz,bizarre,bizrate,bk,bl,black,blacks,blade,blades,blah,blair,blake,blame,blank,blanket,blast,bleeding,blend,bless,blessed,blind,blink,block,blocked,blocking,blocks,blog,blogger,bloggers,blogging,blogs,blond,blonde,blood,bloom,bloomberg,blow,blowing,blue,blues,bluetooth,blvd,bm,bmw,bo,board,boards,boat,boating,boats,bob,bobby,boc,bodies,body,bold,bolivia,bolt,bomb,bon,bond,bonds,bone,bones,bonus,book,booking,bookings,bookmark,bookmarks,books,bookstore,bool,boolean,boom,boost,boot,booth,boots,booty,border,borders,bored,boring,born,borough,bosnia,boss,boston,both,bother,botswana,bottle,bottles,bottom,bought,boulder,boulevard,bound,boundaries,boundary,bouquet,boutique,bow,bowl,bowling,box,boxed,boxes,boxing,boy,boys,bp,br,bra,bracelet,bracelets,bracket,brad,bradford,bradley,brain,brake,brakes,branch,branches,brand,brandon,brands,bras,brass,brave,brazil,brazilian,breach,bread,break,breakdown,breaker,breakfast,breaking,breaks,breast,breath,breathing,breed,breeding,breeds,brian,brick,bridal,bride,bridge,bridges,brief,briefing,briefly,briefs,bright,brighton,brilliant,bring,bringing,brings,brisbane,bristol,britain,britannica,british,britney,broad,broadband,broadcast,broadcasting,broader,broadway,brochure,brochures,broke,broken,broker,brokers,bronze,brook,brooklyn,brooks,brother,brothers,brought,brown,browse,browser,browsers,browsing,bruce,brunei,brunette,brunswick,brush,brussels,brutal,bryan,bryant,bs,bt,bubble,buck,bucks,budapest,buddy,budget,budgets,buf,buffalo,buffer,bug,bugs,build,builder,builders,building,buildings,builds,built,bulgaria,bulgarian,bulk,bull,bullet,bulletin,bumper,bunch,bundle,bunny,burden,bureau,buried,burke,burlington,burn,burner,burning,burns,burst,burton,bus,buses,bush,business,businesses,buster,busy,but,butler,butter,butterfly,button,buttons,butts,buy,buyer,buyers,buying,buys,buzz,bw,by,bye,byte,bytes,ca,cab,cabin,cabinet,cabinets,cable,cables,cache,cached,cad,cadillac,cafe,cage,cake,cakes,cal,calcium,calculate,calculated,calculation,calculations,calculator,calculators,calendar,calendars,calgary,calibration,california,call,called,calling,calls,calm,calvin,cam,cambodia,cambridge,camcorder,camcorders,came,camel,camera,cameras,cameron,cameroon,camp,campaign,campaigns,campbell,camping,camps,campus,cams,can,canada,canadian,canal,canberra,cancel,cancellation,cancelled,cancer,candidate,candidates,candle,candles,candy,cannon,canon,cant,canvas,canyon,cap,capabilities,capability,capable,capacity,cape,capital,capitol,caps,captain,capture,captured,car,carb,carbon,card,cardiac,cardiff,cardiovascular,cards,care,career,careers,careful,carefully,carey,cargo,caribbean,caring,carl,carlo,carlos,carmen,carnival,carol,carolina,caroline,carpet,carried,carrier,carriers,carries,carroll,carry,carrying,cars,cart,carter,cartoon,cartoons,cartridge,cartridges,cas,casa,case,cases,casey,cash,cashiers,casino,casinos,casio,cassette,cast,casting,castle,casual,cat,catalog,catalogs,catalogue,catalyst,catch,categories,category,catering,cathedral,catherine,catholic,cats,cattle,caught,cause,caused,causes,causing,caution,cave,cayman,cb,cc,ccd,cd,cdna,cds,cdt,ce,cedar,ceiling,celebrate,celebration,celebrities,celebrity,celebs,cell,cells,cellular,celtic,cement,cemetery,census,cent,center,centered,centers,central,centre,centres,cents,centuries,century,ceo,ceramic,ceremony,certain,certainly,certificate,certificates,certification,certified,cet,cf,cfr,cg,cgi,ch,chad,chain,chains,chair,chairman,chairs,challenge,challenged,challenges,challenging,chamber,chambers,champagne,champion,champions,championship,championships,chan,chance,chancellor,chances,change,changed,changelog,changes,changing,channel,channels,chaos,chapel,chapter,chapters,char,character,characteristic,characteristics,characterization,characterized,characters,charge,charged,charger,chargers,charges,charging,charitable,charity,charles,charleston,charlie,charlotte,charm,charming,charms,chart,charter,charts,chase,chassis,chat,cheap,cheaper,cheapest,cheat,cheats,check,checked,checking,checklist,checkout,checks,cheers,cheese,chef,chelsea,chem,chemical,chemicals,chemistry,chen,cheque,cherry,chess,chest,chester,chevrolet,chevy,chi,chicago,chick,chicken,chicks,chief,child,childhood,children,childrens,chile,china,chinese,chip,chips,cho,chocolate,choice,choices,choir,cholesterol,choose,choosing,chorus,chose,chosen,chris,christ,christian,christianity,christians,christina,christine,christmas,christopher,chrome,chronic,chronicle,chronicles,chrysler,chubby,chuck,church,churches,ci,cia,cialis,ciao,cigarette,cigarettes,cincinnati,cindy,cinema,cingular,cio,cir,circle,circles,circuit,circuits,circular,circulation,circumstances,circus,cisco,citation,citations,cite,cited,cities,citizen,citizens,citizenship,city,civic,civil,civilian,civilization,cj,cl,claim,claimed,claims,claire,clan,clara,clarity,clark,clarke,class,classes,classic,classical,classics,classification,classified,classifieds,classroom,clause,clay,clean,cleaner,cleaners,cleaning,cleanup,clear,clearance,cleared,clearing,clearly,clerk,cleveland,click,clicking,clicks,client,clients,cliff,climate,climb,climbing,clinic,clinical,clinics,clinton,clip,clips,clock,clocks,clone,close,closed,closely,closer,closes,closest,closing,closure,cloth,clothes,clothing,cloud,clouds,cloudy,club,clubs,cluster,clusters,cm,cms,cn,cnet,cnn,co,coach,coaches,coaching,coal,coalition,coast,coastal,coat,coated,coating,cocktail,cod,code,codes,coding,coffee,cognitive,cohen,coin,coins,col,cold,cole,coleman,colin,collaboration,collaborative,collapse,collar,colleague,colleagues,collect,collected,collectible,collectibles,collecting,collection,collections,collective,collector,collectors,college,colleges,collins,cologne,colombia,colon,colonial,colony,color,colorado,colored,colors,colour,colours,columbia,columbus,column,columnists,columns,com,combat,combination,combinations,combine,combined,combines,combining,combo,come,comedy,comes,comfort,comfortable,comic,comics,coming,comm,command,commander,commands,comment,commentary,commented,comments,commerce,commercial,commission,commissioner,commissioners,commissions,commit,commitment,commitments,committed,committee,committees,commodities,commodity,common,commonly,commons,commonwealth,communicate,communication,communications,communist,communities,community,comp,compact,companies,companion,company,compaq,comparable,comparative,compare,compared,comparing,comparison,comparisons,compatibility,compatible,compensation,compete,competent,competing,competition,competitions,competitors,compilation,compile,compiled,compiler,complaint,complaints,complement,complete,completed,completely,completing,completion,complex,complexity,compliance,compliant,complicated,complications,complimentary,comply,component,components,composed,composer,composite,composition,compound,compounds,comprehensive,compressed,compression,compromise,computation,computational,compute,computed,computer,computers,computing,con,concentrate,concentration,concentrations,concept,concepts,conceptual,concern,concerned,concerning,concerns,concert,concerts,conclude,concluded,conclusion,conclusions,concord,concrete,condition,conditional,conditioning,conditions,condo,condos,conduct,conducted,conducting,conf,conference,conferences,conferencing,confidence,confident,confidential,confidentiality,config,configuration,configurations,configure,configured,configuring,confirm,confirmation,confirmed,conflict,conflicts,confused,confusion,congo,congratulations,congress,congressional,conjunction,connect,connected,connecticut,connecting,connection,connections,connectivity,connector,connectors,cons,conscious,consciousness,consecutive,consensus,consent,consequence,consequences,consequently,conservation,conservative,consider,considerable,consideration,considerations,considered,considering,considers,consist,consistency,consistent,consistently,consisting,consists,console,consoles,consolidated,consolidation,consortium,conspiracy,const,constant,constantly,constitute,constitutes,constitution,constitutional,constraint,constraints,construct,constructed,construction,consult,consultancy,consultant,consultants,consultation,consulting,consumer,consumers,consumption,contact,contacted,contacting,contacts,contain,contained,container,containers,containing,contains,contamination,contemporary,content,contents,contest,contests,context,continent,continental,continually,continue,continued,continues,continuing,continuity,continuous,continuously,contract,contracting,contractor,contractors,contracts,contrary,contrast,contribute,contributed,contributing,contribution,contributions,contributor,contributors,control,controlled,controller,controllers,controlling,controls,controversial,controversy,convenience,convenient,convention,conventional,conventions,convergence,conversation,conversations,conversion,convert,converted,converter,convertible,convicted,conviction,convinced,cook,cookbook,cooked,cookie,cookies,cooking,cool,cooler,cooling,cooper,cooperation,cooperative,coordinate,coordinated,coordinates,coordination,coordinator,cop,cope,copied,copies,copper,copy,copying,copyright,copyrighted,copyrights,coral,cord,cordless,core,cork,corn,cornell,corner,corners,cornwall,corp,corporate,corporation,corporations,corps,corpus,correct,corrected,correction,corrections,correctly,correlation,correspondence,corresponding,corruption,cos,cosmetic,cosmetics,cost,costa,costs,costume,costumes,cottage,cottages,cotton,could,council,councils,counsel,counseling,count,counted,counter,counters,counties,counting,countries,country,counts,county,couple,coupled,couples,coupon,coupons,courage,courier,course,courses,court,courtesy,courts,cove,cover,coverage,covered,covering,covers,cow,cowboy,cp,cpu,cr,crack,cradle,craft,crafts,craig,craps,crash,crawford,crazy,cream,create,created,creates,creating,creation,creations,creative,creativity,creator,creature,creatures,credit,credits,creek,crest,crew,cricket,crime,crimes,criminal,crisis,criteria,criterion,critical,criticism,critics,crm,croatia,crop,crops,cross,crossing,crossword,crowd,crown,crucial,crude,cruise,cruises,cruz,cry,crystal,cs,css,cst,ct,ctrl,cu,cuba,cube,cubic,cuisine,cult,cultural,culture,cultures,cumulative,cup,cups,cure,curious,currencies,currency,current,currently,curriculum,cursor,curtis,curve,curves,custody,custom,customer,customers,customise,customize,customized,customs,cut,cute,cuts,cutting,cv,cvs,cw,cyber,cycle,cycles,cycling,cylinder,cyprus,cz,czech,da,dad,daddy,daily,dairy,daisy,dakota,dale,dallas,dam,damage,damaged,damages,dame,dan,dana,dance,dancing,danger,dangerous,daniel,danish,danny,dans,dare,dark,darkness,darwin,das,dash,dat,data,database,databases,date,dated,dates,dating,daughter,daughters,dave,david,davidson,davis,dawn,day,days,dayton,db,dc,dd,ddr,de,dead,deadline,deadly,deaf,deal,dealer,dealers,dealing,deals,dealt,dean,dear,death,deaths,debate,debian,deborah,debt,debug,debut,dec,decade,decades,december,decent,decide,decided,decimal,decision,decisions,deck,declaration,declare,declared,decline,declined,decor,decorating,decorative,decrease,decreased,dedicated,dee,deemed,deep,deeper,deeply,deer,def,default,defeat,defects,defence,defend,defendant,defense,defensive,deferred,deficit,define,defined,defines,defining,definitely,definition,definitions,degree,degrees,del,delaware,delay,delayed,delays,delegation,delete,deleted,delhi,delicious,delight,deliver,delivered,delivering,delivers,delivery,dell,delta,deluxe,dem,demand,demanding,demands,demo,democracy,democrat,democratic,democrats,demographic,demonstrate,demonstrated,demonstrates,demonstration,den,denial,denied,denmark,dennis,dense,density,dental,dentists,denver,deny,department,departmental,departments,departure,depend,dependence,dependent,depending,depends,deployment,deposit,deposits,depot,depression,dept,depth,deputy,der,derby,derek,derived,des,descending,describe,described,describes,describing,description,descriptions,desert,deserve,design,designated,designation,designed,designer,designers,designing,designs,desirable,desire,desired,desk,desktop,desktops,desperate,despite,destination,destinations,destiny,destroy,destroyed,destruction,detail,detailed,details,detect,detected,detection,detective,detector,determination,determine,determined,determines,determining,detroit,deutsch,deutsche,deutschland,dev,devel,develop,developed,developer,developers,developing,development,developmental,developments,develops,deviant,deviation,device,devices,devil,devon,devoted,df,dg,dh,di,diabetes,diagnosis,diagnostic,diagram,dial,dialog,dialogue,diameter,diamond,diamonds,diana,diane,diary,dice,dictionaries,dictionary,did,die,died,diego,dies,diesel,diet,dietary,diff,differ,difference,differences,different,differential,differently,difficult,difficulties,difficulty,diffs,dig,digest,digit,digital,dim,dimension,dimensional,dimensions,dining,dinner,dip,diploma,dir,direct,directed,direction,directions,directive,directly,director,directories,directors,directory,dirt,dirty,dis,disabilities,disability,disable,disabled,disagree,disappointed,disaster,disc,discharge,disciplinary,discipline,disciplines,disclaimer,disclaimers,disclose,disclosure,disco,discount,discounted,discounts,discover,discovered,discovery,discrete,discretion,discrimination,discs,discuss,discussed,discusses,discussing,discussion,discussions,disease,diseases,dish,dishes,disk,disks,disney,disorder,disorders,dispatch,dispatched,display,displayed,displaying,displays,disposal,disposition,dispute,disputes,dist,distance,distances,distant,distinct,distinction,distinguished,distribute,distributed,distribution,distributions,distributor,distributors,district,districts,disturbed,div,dive,diverse,diversity,divide,divided,dividend,divine,diving,division,divisions,divorce,divx,diy,dj,dk,dl,dm,dna,dns,do,doc,dock,docs,doctor,doctors,doctrine,document,documentary,documentation,documented,documents,dod,dodge,doe,does,dog,dogs,doing,doll,dollar,dollars,dolls,dom,domain,domains,dome,domestic,dominant,dominican,don,donald,donate,donated,donation,donations,done,donna,donor,donors,dont,doom,door,doors,dos,dosage,dose,dot,double,doubt,doug,douglas,dover,dow,down,download,downloadable,downloaded,downloading,downloads,downtown,dozen,dozens,dp,dpi,dr,draft,drag,dragon,drain,drainage,drama,dramatic,dramatically,draw,drawing,drawings,drawn,draws,dream,dreams,dress,dressed,dresses,dressing,drew,dried,drill,drilling,drink,drinking,drinks,drive,driven,driver,drivers,drives,driving,drop,dropped,drops,drove,drug,drugs,drum,drums,drunk,dry,dryer,ds,dsc,dsl,dt,dts,du,dual,dubai,dublin,duck,dude,due,dui,duke,dumb,dump,duncan,duo,duplicate,durable,duration,durham,during,dust,dutch,duties,duty,dv,dvd,dvds,dx,dying,dylan,dynamic,dynamics,ea,each,eagle,eagles,ear,earl,earlier,earliest,early,earn,earned,earning,earnings,earrings,ears,earth,earthquake,ease,easier,easily,east,easter,eastern,easy,eat,eating,eau,ebay,ebony,ebook,ebooks,ec,echo,eclipse,eco,ecological,ecology,ecommerce,economic,economics,economies,economy,ecuador,ed,eddie,eden,edgar,edge,edges,edinburgh,edit,edited,editing,edition,editions,editor,editorial,editorials,editors,edmonton,eds,edt,educated,education,educational,educators,edward,edwards,ee,ef,effect,effective,effectively,effectiveness,effects,efficiency,efficient,efficiently,effort,efforts,eg,egg,eggs,egypt,egyptian,eh,eight,either,el,elder,elderly,elect,elected,election,elections,electoral,electric,electrical,electricity,electro,electron,electronic,electronics,elegant,element,elementary,elements,elephant,elevation,eleven,eligibility,eligible,eliminate,elimination,elite,elizabeth,ellen,elliott,ellis,else,elsewhere,elvis,em,emacs,email,emails,embassy,embedded,emerald,emergency,emerging,emily,emirates,emission,emissions,emma,emotional,emotions,emperor,emphasis,empire,empirical,employ,employed,employee,employees,employer,employers,employment,empty,en,enable,enabled,enables,enabling,enb,enclosed,enclosure,encoding,encounter,encountered,encourage,encouraged,encourages,encouraging,encryption,encyclopedia,end,endangered,ended,endif,ending,endless,endorsed,endorsement,ends,enemies,enemy,energy,enforcement,eng,engage,engaged,engagement,engaging,engine,engineer,engineering,engineers,engines,england,english,enhance,enhanced,enhancement,enhancements,enhancing,enjoy,enjoyed,enjoying,enlarge,enlargement,enormous,enough,enquiries,enquiry,enrolled,enrollment,ensemble,ensure,ensures,ensuring,ent,enter,entered,entering,enterprise,enterprises,enters,entertaining,entertainment,entire,entirely,entities,entitled,entity,entrance,entrepreneur,entrepreneurs,entries,entry,envelope,environment,environmental,environments,enzyme,eos,ep,epa,epic,episode,episodes,epson,eq,equal,equality,equally,equation,equations,equilibrium,equipment,equipped,equity,equivalent,er,era,eric,ericsson,erik,erotica,erp,error,errors,es,escape,escorts,especially,essay,essays,essence,essential,essentially,essentials,essex,est,establish,established,establishing,establishment,estate,estates,estimate,estimated,estimates,estimation,estonia,et,etc,eternal,ethernet,ethical,ethics,ethiopia,ethnic,eu,eugene,eur,euro,europe,european,euros,ev,eva,eval,evaluate,evaluated,evaluating,evaluation,evaluations,evanescence,evans,eve,even,evening,event,events,eventually,ever,every,everybody,everyday,everyone,everything,everywhere,evidence,evident,evil,evolution,ex,exact,exactly,exam,examination,examinations,examine,examined,examines,examining,example,examples,exams,exceed,excel,excellence,excellent,except,exception,exceptional,exceptions,excerpt,excess,excessive,exchange,exchanges,excited,excitement,exciting,exclude,excluded,excluding,exclusion,exclusive,exclusively,excuse,exec,execute,executed,execution,executive,executives,exempt,exemption,exercise,exercises,exhaust,exhibit,exhibition,exhibitions,exhibits,exist,existed,existence,existing,exists,exit,exotic,exp,expand,expanded,expanding,expansion,expect,expectations,expected,expects,expedia,expenditure,expenditures,expense,expenses,expensive,experience,experienced,experiences,experiencing,experiment,experimental,experiments,expert,expertise,experts,expiration,expired,expires,explain,explained,explaining,explains,explanation,explicit,explicitly,exploration,explore,explorer,exploring,explosion,expo,export,exports,exposed,exposure,express,expressed,expression,expressions,ext,extend,extended,extending,extends,extension,extensions,extensive,extent,exterior,external,extra,extract,extraction,extraordinary,extras,extreme,extremely,eye,eyed,eyes,ez,fa,fabric,fabrics,fabulous,face,faced,faces,facial,facilitate,facilities,facility,facing,fact,factor,factors,factory,facts,faculty,fail,failed,failing,fails,failure,failures,fair,fairfield,fairly,fairy,faith,fake,fall,fallen,falling,falls,false,fame,familiar,families,family,famous,fan,fancy,fans,fantastic,fantasy,faq,faqs,far,fare,fares,farm,farmer,farmers,farming,farms,fascinating,fashion,fast,faster,fastest,fat,fatal,fate,father,fathers,fatty,fault,favor,favorite,favorites,favors,favour,favourite,favourites,fax,fbi,fc,fcc,fd,fda,fe,fear,fears,feat,feature,featured,features,featuring,feb,february,fed,federal,federation,fee,feed,feedback,feeding,feeds,feel,feeling,feelings,feels,fees,feet,fell,fellow,fellowship,felt,female,females,fence,feof,ferrari,ferry,festival,festivals,fetish,fever,few,fewer,ff,fg,fi,fiber,fibre,fiction,field,fields,fifteen,fifth,fifty,fig,fight,fighter,fighters,fighting,figure,figured,figures,fiji,file,filed,filename,files,filing,fill,filled,filling,film,filme,films,filter,filtering,filters,fin,final,finally,finals,finance,finances,financial,financing,find,finder,finding,findings,findlaw,finds,fine,finest,finger,fingers,finish,finished,finishing,finite,finland,finnish,fioricet,fire,fired,firefox,fireplace,fires,firewall,firewire,firm,firms,firmware,first,fiscal,fish,fisher,fisheries,fishing,fist,fit,fitness,fits,fitted,fitting,five,fix,fixed,fixes,fixtures,fl,flag,flags,flame,flash,flashers,flashing,flat,flavor,fleece,fleet,flesh,flex,flexibility,flexible,flickr,flight,flights,flip,float,floating,flood,floor,flooring,floors,floppy,floral,florence,florida,florist,florists,flour,flow,flower,flowers,flows,floyd,flu,fluid,flush,flux,fly,flyer,flying,fm,fo,foam,focal,focus,focused,focuses,focusing,fog,fold,folder,folders,folding,folk,folks,follow,followed,following,follows,font,fonts,foo,food,foods,fool,foot,footage,football,footwear,for,forbes,forbidden,force,forced,forces,ford,forecast,forecasts,foreign,forest,forestry,forests,forever,forge,forget,forgot,forgotten,fork,form,formal,format,formation,formats,formatting,formed,former,formerly,forming,forms,formula,fort,forth,fortune,forty,forum,forums,forward,forwarding,fossil,foster,foto,fought,foul,found,foundation,foundations,founded,founder,fountain,four,fourth,fox,fp,fr,fraction,fragrance,fragrances,frame,framed,frames,framework,framing,france,franchise,francis,francisco,frank,frankfurt,franklin,fraser,fraud,fred,frederick,free,freebsd,freedom,freelance,freely,freeware,freeze,freight,french,frequencies,frequency,frequent,frequently,fresh,fri,friday,fridge,friend,friendly,friends,friendship,frog,from,front,frontier,frost,frozen,fruit,fruits,frying,fs,ft,ftp,fu,fuel,fuji,fujitsu,full,fully,fun,function,functional,functionality,functioning,functions,fund,fundamental,fundamentals,funded,funding,fundraising,funds,funeral,funk,funky,funny,fur,furnished,furnishings,furniture,further,furthermore,fusion,future,futures,fuzzy,fw,fwd,fx,fy,ga,gabriel,gadgets,gage,gain,gained,gains,galaxy,gale,galleries,gallery,gambling,game,gamecube,games,gaming,gamma,gang,gap,gaps,garage,garbage,garcia,garden,gardening,gardens,garlic,garmin,gary,gas,gasoline,gate,gates,gateway,gather,gathered,gathering,gauge,gave,gay,gays,gazette,gb,gba,gbp,gc,gd,gdp,ge,gear,geek,gel,gem,gen,gender,gene,genealogy,general,generally,generate,generated,generates,generating,generation,generations,generator,generators,generic,generous,genes,genesis,genetic,genetics,geneva,genius,genome,genre,genres,gentle,gentleman,gently,genuine,geo,geographic,geographical,geography,geological,geology,geometry,george,georgia,gerald,german,germany,get,gets,getting,gg,ghana,ghost,ghz,gi,giant,giants,gibraltar,gibson,gif,gift,gifts,gig,gilbert,girl,girlfriend,girls,gis,give,given,gives,giving,gl,glad,glance,glasgow,glass,glasses,glen,glenn,global,globe,glory,glossary,gloves,glow,glucose,gm,gmbh,gmc,gmt,gnome,gnu,go,goal,goals,goat,gods,goes,going,gold,golden,golf,gone,gonna,good,goods,google,gordon,gore,gorgeous,gospel,gossip,got,gothic,goto,gotta,gotten,gourmet,governance,governing,government,governmental,governments,governor,gp,gpl,gps,gr,grab,grace,grad,grade,grades,gradually,graduate,graduated,graduates,graduation,graham,grain,grammar,grams,grand,grande,granny,grant,granted,grants,graph,graphic,graphical,graphics,graphs,gras,grass,grateful,gratis,gratuit,grave,gravity,gray,great,greater,greatest,greatly,greece,greek,green,greene,greenhouse,greensboro,greeting,greetings,greg,gregory,grenada,grew,grey,grid,griffin,grill,grip,grocery,groove,gross,ground,grounds,groundwater,group,groups,grove,grow,growing,grown,grows,growth,gs,gsm,gst,gt,gtk,guam,guarantee,guaranteed,guarantees,guard,guardian,guards,guatemala,guess,guest,guestbook,guests,gui,guidance,guide,guided,guidelines,guides,guild,guilty,guinea,guitar,guitars,gulf,gum,gun,guns,guru,guy,guyana,guys,gym,gzip,ha,habitat,habits,hack,hacker,had,hair,hairy,haiti,half,halifax,hall,halloween,halo,ham,hamburg,hamilton,hammer,hampshire,hampton,hand,handbags,handbook,handed,handheld,handhelds,handle,handled,handles,handling,handmade,hands,handy,hang,hanging,hans,hansen,happen,happened,happening,happens,happiness,happy,harassment,harbor,harbour,hard,hardcover,harder,hardly,hardware,hardwood,harley,harm,harmful,harmony,harold,harper,harris,harrison,harry,hart,hartford,harvard,harvest,harvey,has,hash,hat,hate,hats,have,haven,having,hawaii,hawaiian,hawk,hay,hayes,hazard,hazardous,hazards,hb,hc,hd,he,head,headed,header,headers,heading,headline,headlines,headphones,headquarters,heads,headset,healing,health,healthcare,healthy,hear,heard,hearing,hearings,heart,hearts,heat,heated,heater,heath,heather,heating,heaven,heavily,heavy,hebrew,heel,height,heights,held,helen,helena,helicopter,hello,helmet,help,helped,helpful,helping,helps,hence,henderson,henry,hepatitis,her,herald,herb,herbal,herbs,here,hereby,herein,heritage,hero,heroes,herself,hewlett,hey,hh,hi,hidden,hide,hierarchy,high,higher,highest,highland,highlight,highlighted,highlights,highly,highs,highway,highways,hiking,hill,hills,hilton,him,himself,hindu,hint,hints,hip,hire,hired,hiring,his,hispanic,hist,historic,historical,history,hit,hitachi,hits,hitting,hiv,hk,hl,ho,hobbies,hobby,hockey,hold,holdem,holder,holders,holding,holdings,holds,hole,holes,holiday,holidays,holland,hollow,holly,hollywood,holmes,holocaust,holy,home,homeland,homeless,homepage,homes,hometown,homework,hon,honda,honduras,honest,honey,hong,honolulu,honor,honors,hood,hook,hop,hope,hoped,hopefully,hopes,hoping,hopkins,horizon,horizontal,hormone,horn,horrible,horror,horse,horses,hose,hospital,hospitality,hospitals,host,hosted,hostel,hostels,hosting,hosts,hot,hotel,hotels,hotmail,hottest,hour,hourly,hours,house,household,households,houses,housewares,housewives,housing,houston,how,howard,however,howto,hp,hq,hr,href,hrs,hs,ht,html,http,hu,hub,hudson,huge,hugh,hughes,hugo,hull,human,humanitarian,humanities,humanity,humans,humidity,humor,hundred,hundreds,hung,hungarian,hungary,hunger,hungry,hunt,hunter,hunting,huntington,hurricane,hurt,husband,hwy,hybrid,hydraulic,hydrocodone,hydrogen,hygiene,hypothesis,hypothetical,hyundai,hz,ia,ian,ibm,ic,ice,iceland,icon,icons,icq,ict,id,idaho,ide,idea,ideal,ideas,identical,identification,identified,identifier,identifies,identify,identifying,identity,idle,idol,ids,ie,ieee,if,ignore,ignored,ii,iii,il,ill,illegal,illinois,illness,illustrated,illustration,illustrations,im,image,images,imagination,imagine,imaging,img,immediate,immediately,immigrants,immigration,immune,immunology,impact,impacts,impaired,imperial,implement,implementation,implemented,implementing,implications,implied,implies,import,importance,important,importantly,imported,imports,impose,imposed,impossible,impressed,impression,impressive,improve,improved,improvement,improvements,improving,in,inappropriate,inbox,inc,incentive,incentives,inch,inches,incidence,incident,incidents,incl,include,included,includes,including,inclusion,inclusive,income,incoming,incomplete,incorporate,incorporated,incorrect,increase,increased,increases,increasing,increasingly,incredible,incurred,ind,indeed,independence,independent,independently,index,indexed,indexes,india,indian,indiana,indianapolis,indians,indicate,indicated,indicates,indicating,indication,indicator,indicators,indices,indie,indigenous,indirect,individual,individually,individuals,indonesia,indonesian,indoor,induced,induction,industrial,industries,industry,inexpensive,inf,infant,infants,infected,infection,infections,infectious,infinite,inflation,influence,influenced,influences,info,inform,informal,information,informational,informative,informed,infrared,infrastructure,infringement,ing,ingredients,inherited,initial,initially,initiated,initiative,initiatives,injection,injured,injuries,injury,ink,inkjet,inline,inn,inner,innocent,innovation,innovations,innovative,inns,input,inputs,inquire,inquiries,inquiry,ins,insects,insert,inserted,insertion,inside,insider,insight,insights,inspection,inspections,inspector,inspiration,inspired,install,installation,installations,installed,installing,instance,instances,instant,instantly,instead,institute,institutes,institution,institutional,institutions,instruction,instructional,instructions,instructor,instructors,instrument,instrumental,instrumentation,instruments,insulation,insulin,insurance,insured,int,intake,integer,integral,integrate,integrated,integrating,integration,integrity,intel,intellectual,intelligence,intelligent,intend,intended,intense,intensity,intensive,intent,intention,inter,interact,interaction,interactions,interactive,interest,interested,interesting,interests,interface,interfaces,interference,interim,interior,intermediate,internal,international,internationally,internet,internship,interpretation,interpreted,intersection,interstate,interval,intervals,intervention,interventions,interview,interviews,intimate,intl,into,intranet,intro,introduce,introduced,introduces,introducing,introduction,introductory,invalid,invasion,invention,inventory,invest,investigate,investigated,investigation,investigations,investigator,investigators,investing,investment,investments,investor,investors,invisible,invitation,invitations,invite,invited,invoice,involve,involved,involvement,involves,involving,io,ion,iowa,ip,ipaq,ipod,ips,ir,ira,iran,iraq,iraqi,irc,ireland,irish,iron,irrigation,irs,is,isa,isaac,isbn,islam,islamic,island,islands,isle,iso,isolated,isolation,isp,israel,israeli,issn,issue,issued,issues,ist,istanbul,it,italia,italian,italiano,italic,italy,item,items,its,itself,itunes,iv,ivory,ix,ja,jack,jacket,jackets,jackie,jackson,jacksonville,jacob,jade,jaguar,jail,jake,jam,jamaica,james,jamie,jan,jane,janet,january,japan,japanese,jar,jason,java,javascript,jay,jazz,jc,jd,je,jean,jeans,jeep,jeff,jefferson,jeffrey,jennifer,jenny,jeremy,jerry,jersey,jerusalem,jesse,jessica,jesus,jet,jets,jewel,jewellery,jewelry,jewish,jews,jill,jim,jimmy,jj,jm,joan,job,jobs,joe,joel,john,johnny,johns,johnson,johnston,join,joined,joining,joins,joint,joke,jokes,jon,jonathan,jones,jordan,jose,joseph,josh,joshua,journal,journalism,journalist,journalists,journals,journey,joy,joyce,jp,jpeg,jpg,jr,js,juan,judge,judges,judgment,judicial,judy,juice,jul,julia,julian,julie,july,jump,jumping,jun,junction,june,jungle,junior,junk,jurisdiction,jury,just,justice,justify,justin,juvenile,jvc,ka,kai,kansas,karaoke,karen,karl,karma,kate,kathy,katie,katrina,kay,kazakhstan,kb,kde,keen,keep,keeping,keeps,keith,kelly,ken,kennedy,kenneth,kenny,keno,kent,kentucky,kenya,kept,kernel,kerry,kevin,key,keyboard,keyboards,keys,keyword,keywords,kg,kick,kid,kidney,kids,kill,killed,killer,killing,kills,kilometers,kim,kinase,kind,kinda,kinds,king,kingdom,kings,kingston,kirk,kiss,kissing,kit,kitchen,kits,kitty,klein,km,knee,knew,knife,knight,knights,knit,knitting,knives,knock,know,knowing,knowledge,known,knows,ko,kodak,kong,korea,korean,kruger,ks,kurt,kuwait,kw,ky,kyle,la,lab,label,labeled,labels,labor,laboratories,laboratory,labour,labs,lace,lack,ladder,laden,ladies,lady,lafayette,laid,lake,lakes,lamb,lambda,lamp,lamps,lan,lancaster,lance,land,landing,lands,landscape,landscapes,lane,lanes,lang,language,languages,lanka,laos,lap,laptop,laptops,large,largely,larger,largest,larry,las,laser,lash,last,lasting,lat,late,lately,later,latest,latex,latin,latino,latitude,latter,latvia,lauderdale,laugh,laughing,launch,launched,launches,laundry,laura,lauren,law,lawn,lawrence,laws,lawsuit,lawyer,lawyers,lay,layer,layers,layout,lazy,lb,lbs,lc,lcd,ld,le,lead,leader,leaders,leadership,leading,leads,leaf,league,lean,learn,learned,learners,learning,lease,leasing,least,leather,leave,leaves,leaving,lebanon,lecture,lectures,led,lee,leeds,left,leg,legacy,legal,legally,legend,legendary,legends,legislation,legislative,legislature,legitimate,legs,leisure,lemon,len,lender,lenders,lending,length,lens,lenses,leo,leon,leonard,leone,les,lesbian,leslie,less,lesser,lesson,lessons,let,lets,letter,letters,letting,leu,level,levels,levitra,levy,lewis,lexington,lexmark,lexus,lf,lg,li,liabilities,liability,liable,lib,liberal,liberia,liberty,librarian,libraries,library,libs,licence,license,licensed,licenses,licensing,licking,lid,lie,liechtenstein,lies,life,lifestyle,lifetime,lift,light,lightbox,lighter,lighting,lightning,lights,lightweight,like,liked,likelihood,likely,likes,likewise,lil,lime,limit,limitation,limitations,limited,limiting,limits,limousines,lincoln,linda,lindsay,line,linear,lined,lines,lingerie,link,linked,linking,links,linux,lion,lions,lip,lips,liquid,lisa,list,listed,listen,listening,listing,listings,listprice,lists,lit,lite,literacy,literally,literary,literature,lithuania,litigation,little,live,lived,liver,liverpool,lives,livestock,living,liz,ll,llc,lloyd,llp,lm,ln,lo,load,loaded,loading,loads,loan,loans,lobby,loc,local,locale,locally,locate,located,location,locations,locator,lock,locked,locking,locks,lodge,lodging,log,logan,logged,logging,logic,logical,login,logistics,logitech,logo,logos,logs,lol,london,lone,lonely,long,longer,longest,longitude,look,looked,looking,looks,lookup,loop,loops,loose,lopez,lord,los,lose,losing,loss,losses,lost,lot,lots,lottery,lotus,lou,loud,louis,louise,louisiana,louisville,lounge,love,loved,lovely,lover,lovers,loves,loving,low,lower,lowest,lows,lp,ls,lt,ltd,lu,lucas,lucia,luck,lucky,lucy,luggage,luis,luke,lunch,lung,luther,luxembourg,luxury,lycos,lying,lynn,lyric,lyrics,ma,mac,macedonia,machine,machinery,machines,macintosh,macro,mad,madagascar,made,madison,madness,madrid,mae,mag,magazine,magazines,magic,magical,magnet,magnetic,magnificent,magnitude,mai,maiden,mail,mailed,mailing,mailman,mails,mailto,main,maine,mainland,mainly,mainstream,maintain,maintained,maintaining,maintains,maintenance,major,majority,make,maker,makers,makes,makeup,making,malawi,malaysia,maldives,male,males,mali,mall,malpractice,malta,mambo,man,manage,managed,management,manager,managers,managing,manchester,mandate,mandatory,manga,manhattan,manitoba,manner,manor,manual,manually,manuals,manufacture,manufactured,manufacturer,manufacturers,manufacturing,many,map,maple,mapping,maps,mar,marathon,marble,marc,march,marco,marcus,mardi,margaret,margin,maria,mariah,marie,marijuana,marilyn,marina,marine,mario,marion,maritime,mark,marked,marker,markers,market,marketing,marketplace,markets,marking,marks,marriage,married,marriott,mars,marsh,marshall,mart,martha,martial,martin,marvel,mary,maryland,mas,mask,mason,mass,massachusetts,massage,massive,master,masters,mat,match,matched,matches,matching,mate,material,materials,maternity,math,mathematical,mathematics,mating,matrix,mats,matt,matter,matters,matthew,mattress,mature,maui,mauritius,max,maximize,maximum,may,maybe,mayor,mazda,mb,mba,mc,mcdonald,md,me,meal,meals,mean,meaning,meaningful,means,meant,meanwhile,measure,measured,measurement,measurements,measures,measuring,meat,mechanical,mechanics,mechanism,mechanisms,med,medal,media,median,mediawiki,medicaid,medical,medicare,medication,medications,medicine,medicines,medieval,meditation,mediterranean,medium,medline,meet,meeting,meetings,meets,meetup,mega,mel,melbourne,melissa,mem,member,members,membership,membrane,memo,memorabilia,memorial,memories,memory,memphis,men,mens,ment,mental,mention,mentioned,mentor,menu,menus,mercedes,merchandise,merchant,merchants,mercury,mercy,mere,merely,merge,merger,merit,merry,mesa,mesh,mess,message,messages,messaging,messenger,met,meta,metabolism,metadata,metal,metallic,metallica,metals,meter,meters,method,methodology,methods,metres,metric,metro,metropolitan,mexican,mexico,meyer,mf,mg,mh,mhz,mi,mia,miami,mic,mice,michael,michel,michelle,michigan,micro,microphone,microsoft,microwave,mid,middle,midi,midlands,midnight,midwest,might,mighty,migration,mike,mil,milan,mild,mile,mileage,miles,military,milk,mill,millennium,miller,million,millions,mills,milton,milwaukee,mime,min,mind,minds,mine,mineral,minerals,mines,mini,miniature,minimal,minimize,minimum,mining,minister,ministers,ministries,ministry,minneapolis,minnesota,minolta,minor,minority,mins,mint,minus,minute,minutes,miracle,mirror,mirrors,misc,miscellaneous,miss,missed,missile,missing,mission,missions,mississippi,missouri,mistake,mistakes,mistress,mit,mitchell,mitsubishi,mix,mixed,mixer,mixing,mixture,mj,ml,mlb,mls,mm,mn,mo,mobile,mobiles,mobility,mod,mode,model,modeling,modelling,models,modem,modems,moderate,moderator,moderators,modern,modes,modification,modifications,modified,modify,mods,modular,module,modules,moisture,mold,moldova,molecular,molecules,mom,moment,moments,momentum,moms,mon,monaco,monday,monetary,money,mongolia,monica,monitor,monitored,monitoring,monitors,monkey,mono,monroe,monster,monsters,montana,monte,montgomery,month,monthly,months,montreal,mood,moon,moore,moral,more,moreover,morgan,morning,morocco,morris,morrison,mortality,mortgage,mortgages,moscow,moses,moss,most,mostly,motel,motels,mother,motherboard,mothers,motion,motivated,motivation,motor,motorcycle,motorcycles,motorola,motors,mount,mountain,mountains,mounted,mounting,mounts,mouse,mouth,move,moved,movement,movements,movers,moves,movie,movies,moving,mozambique,mozilla,mp,mpeg,mpegs,mpg,mph,mr,mrna,mrs,ms,msg,msie,msn,mt,mu,much,mud,mug,multi,multimedia,multiple,mumbai,munich,municipal,municipality,murder,murphy,murray,muscle,muscles,museum,museums,music,musical,musician,musicians,muslim,muslims,must,mustang,mutual,mv,mw,mx,my,myanmar,myers,myrtle,myself,mysql,mysterious,mystery,myth,na,nail,nails,naked,nam,name,named,namely,names,namespace,namibia,nancy,nano,naples,narrative,narrow,nasa,nascar,nasdaq,nashville,nasty,nat,nathan,nation,national,nationally,nations,nationwide,native,nato,natural,naturally,naturals,nature,naughty,nav,naval,navigate,navigation,navigator,navy,nb,nba,nbc,nc,ncaa,nd,ne,near,nearby,nearest,nearly,nebraska,nec,necessarily,necessary,necessity,neck,necklace,need,needed,needle,needs,negative,negotiation,negotiations,neighbor,neighborhood,neighbors,neil,neither,nelson,neo,neon,nepal,nerve,nervous,nest,nested,net,netherlands,netscape,network,networking,networks,neural,neutral,nevada,never,nevertheless,new,newark,newbie,newcastle,newer,newest,newfoundland,newly,newman,newport,news,newsletter,newsletters,newspaper,newspapers,newton,next,nextel,nfl,ng,nh,nhl,nhs,ni,niagara,nicaragua,nice,nicholas,nick,nickel,nickname,nicole,niger,nigeria,night,nightlife,nightmare,nights,nike,nikon,nil,nine,nintendo,nirvana,nissan,nitrogen,nj,nl,nm,nn,no,noble,nobody,node,nodes,noise,nokia,nominated,nomination,nominations,non,none,nonprofit,noon,nor,norfolk,norm,normal,normally,norman,north,northeast,northern,northwest,norton,norway,norwegian,nose,not,note,notebook,notebooks,noted,notes,nothing,notice,noticed,notices,notification,notifications,notified,notify,notion,notre,nottingham,nov,nova,novel,novels,novelty,november,now,nowhere,np,nr,ns,nsw,nt,ntsc,nu,nuclear,nuke,null,number,numbers,numeric,numerical,numerous,nurse,nursery,nurses,nursing,nut,nutrition,nutritional,nuts,nv,nvidia,nw,ny,nyc,nylon,nz,oak,oakland,oaks,oasis,ob,obesity,obituaries,obj,object,objective,objectives,objects,obligation,obligations,observation,observations,observe,observed,observer,obtain,obtained,obtaining,obvious,obviously,oc,occasion,occasional,occasionally,occasions,occupation,occupational,occupations,occupied,occur,occurred,occurrence,occurring,occurs,ocean,oclc,oct,october,odd,odds,oe,oecd,oem,of,off,offense,offensive,offer,offered,offering,offerings,offers,office,officer,officers,offices,official,officially,officials,offline,offset,offshore,often,og,oh,ohio,oil,oils,ok,okay,oklahoma,ol,old,older,oldest,olive,oliver,olympic,olympics,olympus,om,omaha,oman,omega,omissions,on,once,one,ones,ongoing,onion,online,only,ons,ontario,onto,oo,ooo,oops,op,open,opened,opening,openings,opens,opera,operate,operated,operates,operating,operation,operational,operations,operator,operators,opinion,opinions,opponent,opponents,opportunities,opportunity,opposed,opposite,opposition,opt,optical,optics,optimal,optimization,optimize,optimum,option,optional,options,or,oracle,oral,orange,orbit,orchestra,order,ordered,ordering,orders,ordinance,ordinary,oregon,org,organ,organic,organisation,organisations,organised,organisms,organization,organizational,organizations,organize,organized,organizer,organizing,oriental,orientation,oriented,origin,original,originally,origins,orlando,orleans,os,oscar,ot,other,others,otherwise,ottawa,ou,ought,our,ours,ourselves,out,outcome,outcomes,outdoor,outdoors,outer,outlet,outlets,outline,outlined,outlook,output,outputs,outreach,outside,outsourcing,outstanding,oval,oven,over,overall,overcome,overhead,overnight,overseas,overview,owen,own,owned,owner,owners,ownership,owns,oxford,oxide,oxygen,oz,ozone,pa,pac,pace,pacific,pack,package,packages,packaging,packard,packed,packet,packets,packing,packs,pad,pads,page,pages,paid,pain,painful,paint,paintball,painted,painting,paintings,pair,pairs,pakistan,pal,palace,pale,palestine,palm,palmer,pam,pamela,pan,panama,panasonic,panel,panels,panic,pants,paper,paperback,paperbacks,papers,papua,par,para,parade,paradise,paragraph,paragraphs,paraguay,parallel,parameter,parameters,parcel,parent,parental,parenting,parents,paris,parish,park,parker,parking,parks,parliament,parliamentary,part,partial,partially,participant,participants,participate,participated,participating,participation,particle,particles,particular,particularly,parties,partition,partly,partner,partners,partnership,partnerships,parts,party,pas,paso,pass,passage,passed,passenger,passengers,passes,passing,passion,passive,passport,password,passwords,past,pasta,paste,pastor,pat,patch,patches,patent,patents,path,pathology,paths,patient,patients,patio,patricia,patrick,patrol,pattern,patterns,paul,pavilion,paxil,pay,payable,payday,paying,payment,payments,paypal,payroll,pays,pb,pc,pci,pcs,pct,pd,pda,pdas,pdf,pdt,pe,peace,peaceful,peak,pearl,peas,pediatric,pee,peeing,peer,peers,pen,penalties,penalty,pencil,pendant,pending,penetration,penguin,peninsula,penn,pennsylvania,penny,pens,pension,pensions,pentium,people,peoples,pepper,per,perceived,percent,percentage,perception,perfect,perfectly,perform,performance,performances,performed,performer,performing,performs,perfume,perhaps,period,periodic,periodically,periods,peripheral,peripherals,perl,permalink,permanent,permission,permissions,permit,permits,permitted,perry,persian,persistent,person,personal,personality,personalized,personally,personals,personnel,persons,perspective,perspectives,perth,peru,pest,pet,pete,peter,petersburg,peterson,petite,petition,petroleum,pets,pf,pg,pgp,ph,phantom,pharmaceutical,pharmaceuticals,pharmacies,pharmacology,pharmacy,phase,phases,phd,phenomenon,phentermine,phi,phil,philadelphia,philip,philippines,philips,phillips,philosophy,phoenix,phone,phones,photo,photograph,photographer,photographers,photographic,photographs,photography,photos,photoshop,php,phpbb,phrase,phrases,phys,physical,physically,physician,physicians,physics,physiology,pi,piano,pic,pick,picked,picking,picks,pickup,picnic,pics,picture,pictures,pie,piece,pieces,pierce,pierre,pig,pigeon,pike,pill,pillow,pills,pilot,pin,pine,ping,pink,pins,pioneer,pipe,pipeline,pipes,pirates,pit,pitch,pittsburgh,pix,pixel,pixels,pizza,pj,pk,pl,place,placed,placement,places,placing,plain,plains,plaintiff,plan,plane,planes,planet,planets,planned,planner,planners,planning,plans,plant,plants,plasma,plastic,plastics,plate,plates,platform,platforms,platinum,play,playback,played,player,players,playing,playlist,plays,playstation,plaza,plc,pleasant,please,pleased,pleasure,pledge,plenty,plot,plots,plug,plugin,plugins,plumbing,plus,plymouth,pm,pmc,pmid,pn,po,pocket,pockets,pod,podcast,podcasts,poem,poems,poet,poetry,point,pointed,pointer,pointing,points,poison,pokemon,poker,poland,polar,pole,police,policies,policy,polish,polished,political,politicians,politics,poll,polls,pollution,polo,poly,polyester,polymer,polyphonic,pond,pontiac,pool,pools,poor,pop,pope,popular,popularity,population,populations,por,porcelain,pork,porsche,port,portable,portal,porter,portfolio,portion,portions,portland,portrait,portraits,ports,portsmouth,portugal,portuguese,pos,pose,posing,position,positioning,positions,positive,possess,possession,possibilities,possibility,possible,possibly,post,postage,postal,postcards,posted,poster,posters,posting,postings,postposted,posts,pot,potato,potatoes,potential,potentially,potter,pottery,poultry,pound,pounds,pour,poverty,powder,powell,power,powered,powerful,powerpoint,powers,pp,ppc,ppm,pr,practical,practice,practices,practitioner,practitioners,prague,prairie,praise,pray,prayer,prayers,pre,preceding,precious,precipitation,precise,precisely,precision,predict,predicted,prediction,predictions,prefer,preference,preferences,preferred,prefers,prefix,pregnancy,pregnant,preliminary,premier,premiere,premises,premium,prep,prepaid,preparation,prepare,prepared,preparing,prerequisite,prescribed,prescription,presence,present,presentation,presentations,presented,presenting,presently,presents,preservation,preserve,president,presidential,press,pressed,pressing,pressure,preston,pretty,prev,prevent,preventing,prevention,preview,previews,previous,previously,price,priced,prices,pricing,pride,priest,primarily,primary,prime,prince,princess,princeton,principal,principle,principles,print,printable,printed,printer,printers,printing,prints,prior,priorities,priority,prison,prisoner,prisoners,privacy,private,privilege,privileges,prix,prize,prizes,pro,probability,probably,probe,problem,problems,proc,procedure,procedures,proceed,proceeding,proceedings,proceeds,process,processed,processes,processing,processor,processors,procurement,produce,produced,producer,producers,produces,producing,product,production,productions,productive,productivity,products,profession,professional,professionals,professor,profile,profiles,profit,profits,program,programme,programmer,programmers,programmes,programming,programs,progress,progressive,prohibited,project,projected,projection,projector,projectors,projects,prominent,promise,promised,promises,promising,promo,promote,promoted,promotes,promoting,promotion,promotional,promotions,prompt,promptly,proof,propecia,proper,properly,properties,property,prophet,proportion,proposal,proposals,propose,proposed,proposition,proprietary,pros,prospect,prospective,prospects,prostate,prostores,prot,protect,protected,protecting,protection,protective,protein,proteins,protest,protocol,protocols,prototype,proud,proudly,prove,proved,proven,provide,provided,providence,provider,providers,provides,providing,province,provinces,provincial,provision,provisions,proxy,prozac,ps,psi,psp,pst,psychiatry,psychological,psychology,pt,pts,pty,pub,public,publication,publications,publicity,publicly,publish,published,publisher,publishers,publishing,pubmed,pubs,puerto,pull,pulled,pulling,pulse,pump,pumps,punch,punishment,punk,pupils,puppy,purchase,purchased,purchases,purchasing,pure,purple,purpose,purposes,purse,pursuant,pursue,pursuit,push,pushed,pushing,put,puts,putting,puzzle,puzzles,pvc,python,qatar,qc,qld,qt,qty,quad,qualification,qualifications,qualified,qualify,qualifying,qualities,quality,quantitative,quantities,quantity,quantum,quarter,quarterly,quarters,que,quebec,queen,queens,queensland,queries,query,quest,question,questionnaire,questions,queue,qui,quick,quickly,quiet,quilt,quit,quite,quiz,quizzes,quotations,quote,quoted,quotes,ra,rabbit,race,races,rachel,racial,racing,rack,racks,radar,radiation,radical,radio,radios,radius,rage,raid,rail,railroad,railway,rain,rainbow,raise,raised,raises,raising,raleigh,rally,ralph,ram,ran,ranch,rand,random,randy,range,ranger,rangers,ranges,ranging,rank,ranked,ranking,rankings,ranks,rap,rapid,rapidly,rapids,rare,rarely,rat,rate,rated,rates,rather,rating,ratings,ratio,rational,ratios,rats,raw,ray,raymond,rays,rb,rc,rca,rd,reach,reached,reaches,reaching,reaction,reactions,read,reader,readers,readily,reading,readings,reads,ready,real,realistic,reality,realize,realized,really,realm,realtor,realtors,realty,rear,reason,reasonable,reasonably,reasoning,reasons,rebate,rebates,rebecca,rebel,rebound,rec,recall,receipt,receive,received,receiver,receivers,receives,receiving,recent,recently,reception,receptor,receptors,recipe,recipes,recipient,recipients,recognised,recognition,recognize,recognized,recommend,recommendation,recommendations,recommended,recommends,reconstruction,record,recorded,recorder,recorders,recording,recordings,records,recover,recovered,recovery,recreation,recreational,recruiting,recruitment,recycling,red,redeem,redhead,reduce,reduced,reduces,reducing,reduction,reductions,reed,reef,reel,ref,refer,reference,referenced,references,referral,referrals,referred,referring,refers,refinance,refine,refined,reflect,reflected,reflection,reflections,reflects,reform,reforms,refresh,refrigerator,refugees,refund,refurbished,refuse,refused,reg,regard,regarded,regarding,regardless,regards,reggae,regime,region,regional,regions,register,registered,registrar,registration,registry,regression,regular,regularly,regulated,regulation,regulations,regulatory,rehab,rehabilitation,reid,reject,rejected,relate,related,relates,relating,relation,relations,relationship,relationships,relative,relatively,relatives,relax,relaxation,relay,release,released,releases,relevance,relevant,reliability,reliable,reliance,relief,religion,religions,religious,reload,relocation,rely,relying,remain,remainder,remained,remaining,remains,remark,remarkable,remarks,remedies,remedy,remember,remembered,remind,reminder,remix,remote,removable,removal,remove,removed,removing,renaissance,render,rendered,rendering,renew,renewable,renewal,reno,rent,rental,rentals,rep,repair,repairs,repeat,repeated,replace,replaced,replacement,replacing,replica,replication,replied,replies,reply,report,reported,reporter,reporters,reporting,reports,repository,represent,representation,representations,representative,representatives,represented,representing,represents,reprint,reprints,reproduce,reproduced,reproduction,reproductive,republic,republican,republicans,reputation,request,requested,requesting,requests,require,required,requirement,requirements,requires,requiring,res,rescue,research,researcher,researchers,reseller,reservation,reservations,reserve,reserved,reserves,reservoir,reset,residence,resident,residential,residents,resist,resistance,resistant,resolution,resolutions,resolve,resolved,resort,resorts,resource,resources,respect,respected,respective,respiratory,respond,responded,respondent,respondents,responding,response,responses,responsibilities,responsibility,responsible,rest,restaurant,restaurants,restoration,restore,restored,restrict,restricted,restriction,restrictions,restructuring,result,resulted,resulting,results,resume,resumes,retail,retailer,retailers,retain,retained,retention,retired,retirement,retreat,retrieval,retrieve,retrieved,retro,return,returned,returning,returns,reunion,reuters,rev,reveal,revealed,reveals,revelation,revenge,revenue,revenues,reverse,review,reviewed,reviewer,reviewing,reviews,revised,revision,revisions,revolution,revolutionary,reward,rewards,reynolds,rf,rfc,rg,rh,rhode,rhythm,ri,ribbon,rica,rice,rich,richard,richards,richardson,richmond,rick,ricky,rico,rid,ride,rider,riders,rides,ridge,riding,right,rights,rim,ring,rings,ringtones,rio,rip,ripe,rise,rising,risk,risks,river,rivers,riverside,rj,rl,rm,rn,rna,ro,road,roads,rob,robbie,robert,roberts,robertson,robin,robinson,robot,robots,robust,rochester,rock,rocket,rocks,rocky,rod,roger,rogers,roland,role,roles,roll,rolled,roller,rolling,rolls,rom,roman,romance,romania,romantic,rome,ron,ronald,roof,room,roommate,roommates,rooms,root,roots,rope,rosa,rose,roses,ross,roster,rotary,rotation,rouge,rough,roughly,roulette,round,rounds,route,router,routers,routes,routine,routines,routing,rover,row,rows,roy,royal,royalty,rp,rpg,rpm,rr,rrp,rs,rss,rt,ru,rubber,ruby,rug,rugby,rugs,rule,ruled,rules,ruling,run,runner,running,runs,runtime,rural,rush,russell,russia,russian,ruth,rv,rw,rwanda,rx,ryan,sa,sacramento,sacred,sacrifice,sad,saddam,safari,safe,safely,safer,safety,sage,sagem,said,sail,sailing,saint,saints,sake,salad,salaries,salary,sale,salem,sales,sally,salmon,salon,salt,salvador,salvation,sam,samba,same,samoa,sample,samples,sampling,samsung,samuel,san,sand,sandra,sandwich,sandy,sans,santa,sanyo,sap,sapphire,sara,sarah,sas,saskatchewan,sat,satellite,satin,satisfaction,satisfactory,satisfied,satisfy,saturday,saturn,sauce,saudi,savage,savannah,save,saved,saver,saves,saving,savings,saw,say,saying,says,sb,sbjct,sc,scale,scales,scan,scanned,scanner,scanners,scanning,scared,scary,scenario,scenarios,scene,scenes,scenic,schedule,scheduled,schedules,scheduling,schema,scheme,schemes,scholar,scholars,scholarship,scholarships,school,schools,sci,science,sciences,scientific,scientist,scientists,scoop,scope,score,scored,scores,scoring,scotch,scotia,scotland,scott,scottish,scout,scratch,screen,screening,screens,screenshot,screenshots,screw,script,scripting,scripts,scroll,scsi,scuba,sculpture,sd,se,sea,seafood,seal,sealed,sean,search,searched,searches,searching,seas,season,seasonal,seasons,seat,seating,seats,seattle,sec,second,secondary,seconds,secret,secretariat,secretary,secrets,section,sections,sector,sectors,secure,secured,securely,securities,security,see,seed,seeds,seeing,seek,seeker,seekers,seeking,seeks,seem,seemed,seems,seen,sees,sega,segment,segments,select,selected,selecting,selection,selections,selective,self,sell,seller,sellers,selling,sells,semester,semi,semiconductor,seminar,seminars,sen,senate,senator,senators,send,sender,sending,sends,senegal,senior,seniors,sense,sensitive,sensitivity,sensor,sensors,sent,sentence,sentences,seo,sep,separate,separated,separately,separation,sept,september,seq,sequence,sequences,ser,serbia,serial,series,serious,seriously,serum,serve,served,server,servers,serves,service,services,serving,session,sessions,set,sets,setting,settings,settle,settled,settlement,setup,seven,seventh,several,severe,sewing,sexual,sexuality,sexually,sf,sg,sh,shade,shades,shadow,shadows,shaft,shake,shakespeare,shakira,shall,shame,shanghai,shannon,shape,shaped,shapes,share,shared,shareholders,shares,shareware,sharing,shark,sharon,sharp,shaved,shaw,she,shed,sheep,sheer,sheet,sheets,sheffield,shelf,shell,shelter,shepherd,sheriff,sherman,shield,shift,shine,ship,shipment,shipments,shipped,shipping,ships,shirt,shirts,shock,shoe,shoes,shoot,shooting,shop,shopper,shoppers,shopping,shops,shopzilla,shore,short,shortcuts,shorter,shortly,shorts,shot,shots,should,shoulder,show,showcase,showed,shower,showers,showing,shown,shows,showtimes,shut,shuttle,si,sic,sick,side,sides,sie,siemens,sierra,sig,sight,sigma,sign,signal,signals,signature,signatures,signed,significance,significant,significantly,signing,signs,signup,silence,silent,silicon,silk,silly,silver,sim,similar,similarly,simon,simple,simplified,simply,simpson,simpsons,sims,simulation,simulations,simultaneously,sin,since,sing,singapore,singer,singh,singing,single,singles,sink,sip,sir,sister,sisters,sit,site,sitemap,sites,sitting,situated,situation,situations,six,sixth,size,sized,sizes,sk,skate,skating,ski,skiing,skill,skilled,skills,skin,skins,skip,skirt,skirts,sku,sky,skype,sl,slave,sleep,sleeping,sleeps,sleeve,slide,slides,slideshow,slight,slightly,slim,slip,slope,slot,slots,slovak,slovakia,slovenia,slow,slowly,sm,small,smaller,smallest,smart,smell,smile,smilies,smith,smithsonian,smoke,smoking,smooth,sms,smtp,sn,snake,snap,snapshot,snow,snowboard,so,soa,soap,soc,soccer,social,societies,society,sociology,socket,socks,sodium,sofa,soft,softball,software,soil,sol,solar,solaris,sold,soldier,soldiers,sole,solely,solid,solo,solomon,solution,solutions,solve,solved,solving,soma,somalia,some,somebody,somehow,someone,somerset,something,sometimes,somewhat,somewhere,son,song,songs,sonic,sons,sony,soon,soonest,sophisticated,sorry,sort,sorted,sorts,sought,soul,souls,sound,sounds,soundtrack,soup,source,sources,south,southampton,southeast,southern,southwest,soviet,sox,sp,spa,space,spaces,spain,spam,span,spanish,spank,sparc,spare,spas,spatial,speak,speaker,speakers,speaking,speaks,spears,spec,special,specialist,specialists,specialized,specializing,specially,specials,specialties,specialty,species,specific,specifically,specification,specifications,specifics,specified,specifies,specify,specs,spectacular,spectrum,speech,speeches,speed,speeds,spell,spelling,spencer,spend,spending,spent,sperm,sphere,spice,spider,spies,spin,spine,spirit,spirits,spiritual,spirituality,split,spoke,spoken,spokesman,sponsor,sponsored,sponsors,sponsorship,sport,sporting,sports,spot,spotlight,spots,spouse,spray,spread,spreading,spring,springer,springfield,springs,sprint,spy,spyware,sq,sql,squad,square,sr,src,sri,ss,ssl,st,stability,stable,stack,stadium,staff,staffing,stage,stages,stainless,stairs,stake,stakeholders,stamp,stamps,stan,stand,standard,standards,standing,standings,stands,stanford,stanley,star,starring,stars,start,started,starter,starting,starts,startup,stat,state,stated,statement,statements,states,statewide,static,stating,station,stationery,stations,statistical,statistics,stats,status,statute,statutes,statutory,stay,stayed,staying,stays,std,ste,steady,steal,steam,steel,steering,stem,step,stephanie,stephen,steps,stereo,sterling,steve,steven,stevens,stewart,stick,sticker,stickers,sticks,sticky,still,stock,stockholm,stockings,stocks,stolen,stomach,stone,stones,stood,stool,stop,stopped,stopping,stops,storage,store,stored,stores,stories,storm,story,straight,strain,strand,strange,stranger,strap,strategic,strategies,strategy,stream,streaming,streams,street,streets,strength,strengthen,strengthening,strengths,stress,stretch,strict,strictly,strike,strikes,striking,string,strings,strip,stripes,strips,stroke,strong,stronger,strongly,struck,struct,structural,structure,structured,structures,struggle,stuart,stuck,stud,student,students,studied,studies,studio,studios,study,studying,stuff,stuffed,stunning,stupid,style,styles,stylish,stylus,su,sub,subaru,subcommittee,subdivision,subject,subjective,subjects,sublime,submission,submissions,submit,submitted,submitting,subscribe,subscriber,subscribers,subscription,subscriptions,subsection,subsequent,subsequently,subsidiaries,subsidiary,substance,substances,substantial,substantially,substitute,subtle,suburban,subway,succeed,success,successful,successfully,such,sucking,sudan,sudden,suddenly,sue,suffer,suffered,suffering,sufficient,sufficiently,sugar,suggest,suggested,suggesting,suggestion,suggestions,suggests,suicide,suit,suitable,suite,suited,suites,suits,sullivan,sum,summaries,summary,summer,summit,sun,sunday,sunglasses,sunny,sunrise,sunset,sunshine,super,superb,superintendent,superior,supervision,supervisor,supervisors,supplement,supplemental,supplements,supplied,supplier,suppliers,supplies,supply,support,supported,supporters,supporting,supports,suppose,supposed,supreme,sur,sure,surely,surf,surface,surfaces,surfing,surge,surgeon,surgeons,surgery,surgical,surname,surplus,surprise,surprised,surprising,surrey,surround,surrounded,surrounding,surveillance,survey,surveys,survival,survive,survivor,survivors,susan,suse,suspect,suspected,suspended,suspension,sussex,sustainability,sustainable,sustained,suzuki,sv,sw,swap,swaziland,sweat,sweden,swedish,sweet,swift,swim,swimming,swing,swingers,swiss,switch,switched,switches,switching,switzerland,sword,sydney,symantec,symbol,symbols,sympathy,symphony,symposium,symptoms,sync,syndicate,syndication,syndrome,synopsis,syntax,synthesis,synthetic,syracuse,syria,sys,system,systematic,systems,ta,tab,table,tables,tablet,tablets,tabs,tackle,tactics,tag,tagged,tags,tahoe,tail,taiwan,take,taken,taker,takes,taking,tale,talent,talented,tales,talk,talked,talking,talks,tall,tamil,tampa,tan,tank,tanks,tanzania,tap,tape,tapes,tar,target,targeted,targets,tariff,task,tasks,taste,tattoo,taught,tax,taxation,taxes,taxi,taylor,tb,tba,tc,tcp,td,te,tea,teach,teacher,teachers,teaches,teaching,team,teams,tear,tears,tech,technical,technician,technique,techniques,techno,technological,technologies,technology,ted,teddy,tee,teen,teenage,teens,teeth,tel,telecharger,telecom,telecommunications,telephone,telephony,telescope,television,televisions,tell,telling,tells,temp,temperature,temperatures,template,templates,temple,temporal,temporarily,temporary,ten,tenant,tend,tender,tennessee,tennis,tension,tent,term,terminal,terminals,termination,terminology,terms,terrace,terrain,terrible,territories,territory,terror,terrorism,terrorist,terrorists,terry,test,testament,tested,testimonials,testimony,testing,tests,tex,texas,text,textbook,textbooks,textile,textiles,texts,texture,tf,tft,th,thai,thailand,than,thank,thanks,thanksgiving,that,thats,the,theater,theaters,theatre,thee,theft,their,them,theme,themes,themselves,then,theology,theorem,theoretical,theories,theory,therapeutic,therapist,therapy,there,thereafter,thereby,therefore,thereof,thermal,thesaurus,these,thesis,theta,they,thick,thickness,thin,thing,things,think,thinking,thinkpad,thinks,third,thirty,this,thomas,thompson,thomson,thong,thorough,thoroughly,those,thou,though,thought,thoughts,thousand,thousands,thread,threaded,threads,threat,threatened,threatening,threats,three,threshold,thriller,throat,through,throughout,throw,throwing,thrown,throws,thru,thu,thumb,thumbnail,thumbnails,thumbs,thunder,thursday,thus,thy,ti,ticket,tickets,tide,tie,tied,tier,ties,tiffany,tiger,tigers,tight,til,tile,tiles,till,tim,timber,time,timeline,timely,timer,times,timing,timothy,tin,tiny,tion,tions,tip,tips,tire,tired,tires,tissue,titanium,titans,title,titled,titles,tm,tmp,to,tobacco,tobago,today,todd,toddler,toe,together,toilet,token,tokyo,told,tolerance,toll,tom,tomato,tomatoes,tommy,tomorrow,ton,tone,toner,tones,tongue,tonight,tons,tony,too,took,tool,toolbar,toolbox,toolkit,tools,tooth,top,topic,topics,tops,toronto,torture,toshiba,total,totally,totals,touch,touched,tough,tour,touring,tourism,tourist,tournament,tournaments,tours,toward,towards,tower,towers,town,towns,township,toxic,toy,toyota,toys,tp,tr,trace,track,trackback,trackbacks,tracked,tracker,tracking,tracks,tract,tractor,tracy,trade,trademark,trademarks,trader,trades,trading,tradition,traditional,traditions,traffic,tragedy,trail,trailer,trailers,trails,train,trained,trainer,trainers,training,trains,tramadol,trance,trans,transaction,transactions,transcript,transcription,transcripts,transfer,transferred,transfers,transform,transformation,transit,transition,translate,translated,translation,translations,translator,transmission,transmit,transmitted,transparency,transparent,transport,transportation,trap,trash,trauma,travel,traveler,travelers,traveling,traveller,travelling,travels,travesti,travis,tray,treasure,treasurer,treasures,treasury,treat,treated,treating,treatment,treatments,treaty,tree,trees,trek,trembl,tremendous,trend,trends,treo,tri,trial,trials,triangle,tribal,tribe,tribes,tribunal,tribune,tribute,trick,tricks,tried,tries,trigger,trim,trinidad,trinity,trio,trip,tripadvisor,triple,trips,triumph,trivia,troops,tropical,trouble,troubleshooting,trout,troy,truck,trucks,true,truly,trunk,trust,trusted,trustee,trustees,trusts,truth,try,trying,ts,tsunami,tt,tu,tub,tube,tubes,tucson,tue,tuesday,tuition,tulsa,tumor,tune,tuner,tunes,tuning,tunisia,tunnel,turbo,turkey,turkish,turn,turned,turner,turning,turns,turtle,tutorial,tutorials,tv,tvs,twelve,twenty,twice,twiki,twin,twins,twist,twisted,two,tx,ty,tyler,type,types,typical,typically,typing,uc,uganda,ugly,uh,ui,uk,ukraine,ul,ultimate,ultimately,ultra,ultram,um,un,una,unable,unauthorized,unavailable,uncertainty,uncle,und,undefined,under,undergraduate,underground,underlying,understand,understanding,understood,undertake,undertaken,underwear,undo,une,unemployment,unexpected,uni,unified,uniform,union,unions,unique,unit,united,units,unity,univ,universal,universe,universities,university,unix,unknown,unless,unlike,unlikely,unlimited,unlock,unnecessary,unsigned,unsubscribe,until,untitled,unto,unusual,unwrap,up,upc,upcoming,update,updated,updates,updating,upgrade,upgrades,upgrading,upload,uploaded,upon,upper,ups,upset,ur,urban,urge,urgent,uri,url,urls,uruguay,us,usa,usage,usb,usc,usd,usda,use,used,useful,user,username,users,uses,usgs,using,usps,usr,usual,usually,ut,utah,utc,utilities,utility,utilization,utilize,utils,uv,uw,uzbekistan,va,vacancies,vacation,vacations,vaccine,vacuum,val,valentine,valid,validation,validity,valium,valley,valuable,valuation,value,valued,values,valve,valves,vampire,van,vancouver,vanilla,var,variable,variables,variance,variation,variations,varied,varies,varieties,variety,various,vary,varying,vast,vat,vatican,vault,vb,vc,vcr,ve,vector,vegas,vegetable,vegetables,vegetarian,vegetation,vehicle,vehicles,velocity,velvet,vendor,vendors,venezuela,venice,venture,ventures,venue,venues,ver,verbal,verde,verification,verified,verify,verizon,vermont,vernon,verse,version,versions,versus,vertex,vertical,very,vessel,vessels,veteran,veterans,veterinary,vg,vhs,vi,via,vic,vice,victim,victims,victor,victoria,victorian,victory,vid,video,videos,vids,vienna,vietnam,view,viewed,viewer,viewers,viewing,viewpicture,views,vii,viii,viking,villa,village,villages,villas,vincent,vintage,vinyl,violation,violations,violence,violent,violin,vip,viral,virgin,virginia,virtual,virtually,virtue,virus,viruses,visa,visibility,visible,vision,visit,visited,visiting,visitor,visitors,visits,vista,visual,vital,vitamin,vitamins,vocabulary,vocal,vocals,vocational,voice,voices,void,voip,vol,volkswagen,volleyball,volt,voltage,volume,volumes,voluntary,volunteer,volvo,von,vote,voted,voters,votes,voting,voyuer,vp,vpn,vs,vt,vulnerability,vulnerable,wa,wage,wages,wagner,wagon,wait,waiting,waiver,wake,wal,wales,walk,walked,walker,walking,walks,wall,wallace,wallet,wallpaper,wallpapers,walls,walnut,walt,walter,wan,wanna,want,wanted,wanting,wants,war,warcraft,ward,ware,warehouse,warm,warming,warned,warner,warning,warnings,warrant,warranties,warranty,warren,warrior,warriors,wars,was,wash,washer,washing,washington,waste,watch,watched,watches,watching,water,waterproof,waters,watershed,watson,watt,watts,wav,wave,waves,wax,way,wayne,ways,wb,wc,we,weak,wealth,weapon,weapons,wear,wearing,weather,web,webcam,webcams,webcast,weblog,weblogs,webmaster,webmasters,webpage,website,websites,webster,wed,wedding,weddings,wednesday,weed,week,weekend,weekends,weekly,weeks,weight,weighted,weights,weird,welcome,welding,welfare,well,wellington,wellness,wells,welsh,wendy,went,were,wesley,west,western,westminster,wet,whale,what,whatever,whats,wheat,wheel,wheels,when,whenever,where,whereas,wherever,whether,which,while,whilst,white,who,whole,wholesale,whom,whose,why,wi,wichita,wicked,wide,widely,wider,widescreen,widespread,width,wife,wifi,wiki,wikipedia,wild,wilderness,wildlife,wiley,will,william,williams,willing,willow,wilson,win,wind,window,windows,winds,windsor,wine,wines,wing,wings,winner,winners,winning,wins,winston,winter,wire,wired,wireless,wires,wiring,wisconsin,wisdom,wise,wish,wishes,wishing,wit,witch,with,withdrawal,within,without,witness,witnesses,wives,wizard,wm,wma,wn,wolf,woman,women,womens,won,wonder,wonderful,wondering,wood,wooden,woods,wool,worcester,word,words,work,worked,worker,workers,workflow,workforce,working,workout,workplace,works,workshop,workshops,workstation,world,worldcat,worlds,worldwide,worm,worn,worried,worry,worse,worship,worst,worth,worthy,would,wound,wow,wp,wr,wrap,wrapped,wrapping,wreck,wrestling,wright,wrist,write,writer,writers,writes,writing,writings,written,wrong,wrote,ws,wt,wto,wu,wv,ww,www,wx,wy,wyoming,xanax,xbox,xerox,xhtml,xi,xl,xml,xp,ya,yacht,yahoo,yale,yamaha,yang,yard,yards,yarn,ye,yea,yeah,year,yearly,years,yeast,yellow,yemen,yen,yes,yesterday,yet,yield,yields,yn,yo,yoga,york,yorkshire,you,young,younger,your,yours,yourself,youth,yr,yrs,yu,yugoslavia,yukon,za,zambia,zdnet,zealand,zen,zero,zimbabwe,zinc,zip,zoloft,zone,zones,zoning,zoo,zoom,zope,zshops,zu,zum,zus".split(",");
+const VALID_WORDS = new Set(DICT_WORDS);
+
+// ─── Daily puzzles ───
+// Each chain: every adjacent pair forms a real compound word or common phrase.
+// Carefully verified — every link audited.
+const PUZZLES = [
+  ["BLACK", "OUT", "BACK", "PACK", "AGE", "OLD"],
+  ["NIGHT", "CLUB", "HOUSE", "WORK", "OUT", "LET"],
+  ["FIRE", "WORK", "OUT", "SIDE", "WALK", "WAY"],
+  ["HEART", "BEAT", "BOX", "CAR", "POOL", "SIDE"],
+  ["EYE", "BALL", "GAME", "PLAY", "BOY", "FRIEND"],
+  ["HORSE", "BACK", "YARD", "STICK", "BALL", "GAME"],
+  ["POST", "CARD", "BOARD", "WALK", "OUT", "SIDE"],
+  ["BASE", "BALL", "PARK", "WAY", "SIDE", "WALK"],
+  ["SOFT", "BALL", "GAME", "PLAY", "GROUND", "WORK"],
+  ["SAND", "BOX", "CAR", "POOL", "SIDE", "KICK"],
+  ["SNOW", "MAN", "HOLE", "PUNCH", "LINE", "UP"],
+  ["SNOW", "BALL", "PARK", "WAY", "SIDE", "WALK"],
+  ["CHAIR", "MAN", "HOLE", "PUNCH", "LINE", "UP"],
+  ["SHOE", "LACE", "UP", "DATE", "BOOK", "WORM"],
+  ["SHOE", "STRING", "BEAN", "BAG", "PIPE", "LINE"],
+  ["WIND", "MILL", "STONE", "WORK", "OUT", "LAW"],
+  ["GOLD", "FISH", "TANK", "TOP", "SIDE", "WALK"],
+  ["MOON", "LIGHT", "HOUSE", "WORK", "OUT", "SIDE"],
+  ["HEAD", "PHONE", "BOOK", "STORE", "ROOM", "MATE"],
+  ["AIR", "PORT", "HOLE", "PUNCH", "LINE", "UP"],
+  ["SUN", "FLOWER", "POT", "HOLE", "PUNCH", "LINE", "UP"],
+  ["RAIN", "BOW", "TIE", "DOWN", "TOWN", "HALL", "MARK"],
+  ["DAY", "DREAM", "TEAM", "WORK", "OUT", "SIDE", "WAYS"],
+  ["STREET", "LIGHT", "HOUSE", "HOLD", "UP", "TOWN", "HALL"],
+  ["LIFE", "TIME", "LINE", "UP", "DATE", "BOOK", "WORM"],
+  ["BIRTH", "DAY", "DREAM", "TEAM", "WORK", "OUT", "SIDE"],
+  ["STAR", "FISH", "BOWL", "GAME", "PLAY", "BOY", "HOOD"],
+  ["HEAD", "LIGHT", "HOUSE", "HOLD", "UP", "SIDE", "WALK"],
+  ["UNDER", "STAND", "UP", "TIGHT", "ROPE", "BURN", "OUT"],
+  ["AFTER", "SHOCK", "WAVE", "LENGTH", "WISE", "MAN", "HOOD"],
+  ["BASE", "BOARD", "WALK", "OVER", "COAT", "CHECK", "MATE"],
+  ["FREE", "WAY", "SIDE", "WALK", "OUT", "LAW", "BREAKER"],
+  ["FREE", "STYLE", "SHEET", "MUSIC", "BOX", "CAR", "POOL"],
+  ["ROCK", "STAR", "FISH", "BOWL", "GAME", "PLAY", "BOY", "HOOD"],
+  ["BIRTH", "DAY", "CARE", "FREE", "WAY", "SIDE", "WALK", "OUT"],
+  ["WATER", "FALL", "BACK", "YARD", "STICK", "BALL", "GAME", "ROOM"],
+  ["SUN", "SET", "BACK", "DROP", "OUT", "SIDE", "WALK", "WAY"],
+  ["SUN", "FLOWER", "POT", "HOLE", "PUNCH", "LINE", "UP", "DATE"],
+  ["PASS", "WORD", "PLAY", "GROUND", "WORK", "OUT", "LET", "DOWN"],
+  ["NEWS", "PAPER", "BACK", "YARD", "WORK", "OUT", "DOOR", "WAY"],
+  ["SCHOOL", "YARD", "STICK", "BALL", "GAME", "PLAY", "BOOK", "WORM"],
+  ["RAIN", "DROP", "OFF", "SHORE", "LINE", "UP", "TIGHT", "ROPE", "BURN"],
+  ["STAGE", "COACH", "MAN", "HOLE", "PUNCH", "LINE", "UP", "DATE", "BOOK"],
+  ["HIGH", "LAND", "MARK", "UP", "BEAT", "BOX", "CAR", "POOL", "SIDE"],
+  ["TEA", "POT", "HOLE", "PUNCH", "LINE", "UP"],
+  ["COFFEE", "POT", "HOLE", "PUNCH", "LINE", "UP"],
+  ["CUP", "CAKE", "WALK", "OUT", "SIDE", "KICK"],
+  ["FLOWER", "POT", "LUCK", "OUT", "SIDE", "WALK"],
+  ["SUN", "BURN", "OUT", "BACK", "FIRE", "HOUSE"],
+  ["BUS", "STOP", "WATCH", "DOG", "HOUSE", "HOLD"],
+  ["HIGH", "WAY", "OUT", "BACK", "DOOR", "BELL"],
+  ["DROP", "OFF", "SHORE", "LINE", "UP", "TIGHT"],
+  ["CHECK", "MARK", "UP", "HILL", "SIDE", "WALK"],
+  ["CHECK", "BOOK", "WORM", "HOLE", "PUNCH", "LINE"],
+  ["NOTE", "BOOK", "SHELF", "LIFE", "STYLE", "SHEET"],
+  ["NOTE", "PAD", "LOCK", "DOWN", "TOWN", "HALL"],
+  ["CARD", "BOARD", "GAME", "PLAY", "BOY", "HOOD"],
+  ["CHRISTMAS", "TREE", "TOP", "SIDE", "KICK", "BACK"],
+  ["FIRE", "ARM", "CHAIR", "MAN", "HOLE", "PUNCH"],
+  ["ARM", "PIT", "BULL", "DOG", "HOUSE", "HOLD"],
+  ["ARM", "BAND", "WAGON", "WHEEL", "CHAIR", "MAN"],
+  ["PIT", "FALL", "OUT", "SIDE", "WALK", "WAY"],
+  ["PIT", "STOP", "WATCH", "TOWER", "BLOCK", "BUSTER"],
+  ["STOP", "WATCH", "DOG", "HOUSE", "WORK", "OUT"],
+  ["WATCH", "DOG", "FIGHT", "BACK", "DROP", "OFF"],
+  ["ROOF", "TOP", "SIDE", "KICK", "BOX", "CAR"],
+  ["EGG", "SHELL", "FISH", "BOWL", "GAME", "PLAY"],
+  ["EGG", "HEAD", "BAND", "WAGON", "WHEEL", "CHAIR"],
+  ["NEST", "EGG", "HEAD", "LINE", "UP", "DATE"],
+  ["BIRD", "CAGE", "MATCH", "BOOK", "WORM", "HOLE"],
+  ["WATER", "WAY", "SIDE", "WALK", "OUT", "LET"],
+  ["WATER", "FALL", "BACK", "YARD", "WORK", "OUT"],
+  ["SIDE", "KICK", "BACK", "LASH", "OUT", "LET"],
+  ["SHOWER", "HEAD", "LIGHT", "HOUSE", "WORK", "OUT"],
+  ["STAR", "DUST", "PAN", "CAKE", "WALK", "OUT"],
+  ["SUMMER", "TIME", "LINE", "UP", "TIGHT", "ROPE"],
+  ["WINTER", "TIME", "TABLE", "TOP", "SIDE", "WALK"],
+  ["SPRING", "TIME", "LINE", "UP", "DATE", "BOOK"],
+  ["SPRING", "BOARD", "WALK", "OUT", "SIDE", "KICK"],
+  ["FALL", "OUT", "BACK", "DROP", "KICK", "BOX"],
+  ["WORK", "BENCH", "PRESS", "CONFERENCE", "CALL", "BACK"],
+  ["BACK", "YARD", "SALE", "PRICE", "TAG", "LINE"],
+  ["BACK", "BONE", "DRY", "CLEAN", "UP", "DATE"],
+  ["BACK", "PACK", "RAT", "TRAP", "DOOR", "BELL"],
+  ["BACK", "STAGE", "COACH", "MAN", "HOLE", "PUNCH"],
+  ["BACK", "STORY", "BOOK", "WORM", "HOLE", "PUNCH"],
+  ["BACK", "BONE", "HEAD", "PHONE", "BOOK", "WORM"],
+  ["BACK", "UP", "STAIRS", "CASE", "WORK", "OUT"],
+  ["SOFT", "WARE", "HOUSE", "WORK", "OUT", "LAW"],
+  ["HARD", "COVER", "UP", "DATE", "BOOK", "WORM"],
+  ["HARD", "WIRE", "TAP", "DANCE", "FLOOR", "BOARD"],
+  ["SOFT", "BALL", "PARK", "WAY", "OUT", "BACK"],
+  ["SOFT", "SPOT", "LIGHT", "HOUSE", "WORK", "OUT"],
+  ["SHOT", "GUN", "FIRE", "WORK", "BOOK", "WORM"],
+  ["GUN", "POINT", "BLANK", "CHECK", "BOOK", "WORM"],
+  ["POINT", "BLANK", "CHECK", "MARK", "UP", "DATE"],
+  ["POINT", "GUARD", "DOG", "HOUSE", "WORK", "OUT"],
+  ["SCHOOL", "BUS", "STOP", "LIGHT", "HOUSE", "WORK"],
+  ["SCHOOL", "WORK", "OUT", "BACK", "YARD", "STICK"],
+  ["HOME", "WORK", "OUT", "BREAK", "DOWN", "TOWN"],
+  ["HOME", "MADE", "UP", "TOWN", "HALL", "WAY"],
+  ["HOME", "TOWN", "HALL", "WAY", "OUT", "LAW"],
+  ["HOME", "BODY", "GUARD", "RAIL", "ROAD", "KILL"],
+  ["RAIL", "ROAD", "KILL", "JOY", "STICK", "UP"],
+  ["RAIL", "WAY", "STATION", "MASTER", "MIND", "SET"],
+  ["ROAD", "TRIP", "WIRE", "TAP", "DANCE", "FLOOR"],
+  ["CAB", "DRIVER", "SEAT", "BELT", "WAY", "SIDE"],
+  ["POSTER", "BOARD", "WALK", "OVER", "COAT", "CHECK"],
+  ["JACK", "POT", "LUCK", "OUT", "BACK", "DROP"],
+  ["JACK", "KNIFE", "POINT", "GUARD", "DOG", "HOUSE"],
+  ["JACK", "RABBIT", "HOLE", "PUNCH", "LINE", "UP"],
+  ["JACK", "HAMMER", "HEAD", "LIGHT", "HOUSE", "WORK"],
+  ["CHAIN", "MAIL", "BOX", "CAR", "POOL", "SIDE"],
+  ["CHAIN", "SAW", "DUST", "PAN", "CAKE", "WALK"],
+  ["CHAIN", "LINK", "UP", "TIGHT", "ROPE", "BURN"],
+  ["SCHOOL", "YARD", "SALE", "PRICE", "TAG", "LINE"],
+  ["PLAY", "GROUND", "WORK", "OUT", "LET", "DOWN"],
+  ["PLAY", "BOOK", "WORM", "HOLE", "PUNCH", "LINE"],
+  ["PLAY", "BACK", "BONE", "MEAL", "TICKET", "BOOTH"],
+  ["PLAY", "OFF", "SHORE", "LINE", "UP", "DATE"],
+  ["STAGE", "HAND", "BOOK", "STORE", "ROOM", "MATE"],
+  ["BREAK", "UP", "STAIRS", "CASE", "WORK", "OUT"],
+  ["BREAK", "FAST", "FOOD", "COURT", "ROOM", "MATE"],
+  ["CRACK", "DOWN", "TOWN", "HALL", "WAY", "OUT"],
+  ["STREET", "WISE", "MAN", "HOLE", "PUNCH", "LINE"],
+  ["SUBWAY", "STATION", "MASTER", "PIECE", "WORK", "OUT"],
+  ["WAY", "OUT", "BACK", "YARD", "STICK", "BALL", "GAME"],
+  ["WAY", "SIDE", "WALK", "OUT", "BACK", "DROP", "OFF"],
+  ["PIT", "BULL", "DOG", "FIGHT", "CLUB", "HOUSE", "WORK"],
+  ["ROCK", "BAND", "WAGON", "WHEEL", "CHAIR", "MAN", "HOLE"],
+  ["ROCK", "BOTTOM", "LINE", "UP", "DATE", "BOOK", "WORM"],
+  ["SHOOT", "OUT", "BREAK", "DOWN", "TOWN", "HALL", "MARK"],
+  ["BLUE", "PRINT", "OUT", "BACK", "YARD", "WORK"],
+  ["BLUE", "BELL", "HOP", "SCOTCH", "TAPE", "WORM"],
+  ["RED", "WOOD", "WORK", "OUT", "SIDE", "WALK"],
+  ["RED", "HEAD", "LINE", "UP", "DATE", "BOOK"],
+  ["GREEN", "LIGHT", "HOUSE", "WORK", "OUT", "LAW"],
+  ["WHITE", "HOUSE", "WORK", "OUT", "BACK", "DROP"],
+  ["BLACK", "BOARD", "WALK", "OUT", "SIDE", "KICK"],
+  ["BLACK", "MAIL", "BOX", "CAR", "POOL", "SIDE"],
+  ["BLACK", "TOP", "SIDE", "WALK", "OUT", "BACK"],
+  ["WHITE", "OUT", "BACK", "DROP", "OFF", "SHORE", "LINE"],
+  ["YELLOW", "JACKET", "BUTTON", "HOLE", "PUNCH", "LINE"],
+  ["PURPLE", "HEART", "BREAK", "DOWN", "TOWN", "HALL"],
+  ["PURPLE", "HEART", "ATTACK", "DOG", "HOUSE", "WORK"],
+  ["ORANGE", "JUICE", "BOX", "CAR", "POOL", "SIDE"],
+  ["CASTLE", "WALL", "PAPER", "BACK", "YARD", "WORK"],
+  ["WALL", "PAPER", "WORK", "OUT", "LAW", "BREAKER"],
+  ["WALL", "FLOWER", "POT", "HOLE", "PUNCH", "LINE"],
+  ["STONE", "WALL", "FLOWER", "POT", "LUCK", "OUT"],
+  ["STONE", "COLD", "CASE", "WORK", "OUT", "LET"],
+  ["STONE", "WARE", "HOUSE", "WORK", "OUT", "LAW"],
+  ["SAND", "STONE", "WALL", "PAPER", "BACK", "YARD"],
+  ["PAPER", "BACK", "BONE", "DRY", "CLEAN", "UP"],
+  ["PAPER", "TRAIL", "MIX", "TAPE", "WORM", "HOLE"],
+  ["CLIP", "BOARD", "GAME", "PLAY", "BOY", "HOOD"],
+  ["CLIP", "ART", "WORK", "OUT", "SIDE", "WALK", "WAY"],
+  ["INK", "WELL", "SPRING", "BOARD", "WALK", "OUT"],
+  ["INK", "PAD", "LOCK", "DOWN", "TOWN", "HALL", "WAY"],
+  ["POWER", "LIFT", "OFF", "SHORE", "LINE", "UP"],
+  ["SUPER", "MAN", "HOLE", "PUNCH", "LINE", "UP"],
+  ["EARTH", "WORM", "HOLE", "PUNCH", "LINE", "UP"],
+  ["SEA", "SHORE", "LINE", "UP", "DATE", "BOOK"],
+  ["SEA", "WEED", "KILLER", "WHALE", "WATCH", "DOG"],
+  ["SEA", "HORSE", "BACK", "YARD", "WORK", "OUT"],
+  ["CAT", "WALK", "OUT", "BACK", "YARD", "STICK"],
+  ["CAT", "FIGHT", "BACK", "DROP", "KICK", "BOX"],
+  ["CAT", "CALL", "BACK", "DROP", "OUT", "SIDE"],
+  ["DOG", "FIGHT", "CLUB", "HOUSE", "WORK", "OUT"],
+  ["DOG", "WOOD", "WORK", "OUT", "BACK", "DROP"],
+  ["PIG", "TAIL", "LIGHT", "HOUSE", "WORK", "OUT"],
+  ["PAN", "CAKE", "WALK", "OUT", "BACK", "YARD"],
+  ["PAN", "HANDLE", "BAR", "STOOL", "PIGEON", "HOLE"],
+  ["FRYING", "PAN", "CAKE", "WALK", "OUT", "LET"],
+  ["POT", "LUCK", "OUT", "BACK", "DROP", "OFF"],
+  ["BED", "TIME", "LINE", "UP", "DATE", "BOOK"],
+  ["SUN", "DAY", "DREAM", "TEAM", "WORK", "OUT"],
+  ["OVER", "TIME", "LINE", "UP", "DATE", "BOOK"],
+  ["OVER", "BOARD", "WALK", "OUT", "SIDE", "KICK"],
+  ["UNDER", "COVER", "UP", "TIGHT", "ROPE", "BURN"],
+  ["UP", "DATE", "BOOK", "WORM", "HOLE", "PUNCH"],
+  ["UP", "TIGHT", "ROPE", "BURN", "OUT", "BACK"],
+  ["UP", "STAGE", "COACH", "MAN", "HOLE", "PUNCH"],
+  ["UP", "BEAT", "BOX", "CAR", "POOL", "SIDE"],
+  ["UP", "HILL", "SIDE", "WALK", "OUT", "BACK"],
+  ["UP", "TURN", "OUT", "BACK", "YARD", "WORK"],
+  ["DOWN", "TURN", "OUT", "BACK", "DROP", "OFF"],
+  ["DOWN", "POUR", "OVER", "COAT", "CHECK", "MATE"],
+  ["DOWN", "TIME", "LINE", "UP", "DATE", "BOOK"],
+  ["IN", "LAND", "MARK", "UP", "DATE", "BOOK"],
+  ["IN", "DOOR", "WAY", "OUT", "BACK", "DROP"],
+  ["IN", "TAKE", "OUT", "BACK", "DROP", "OFF"],
+  ["OUT", "LET", "DOWN", "TOWN", "HALL", "WAY"],
+  ["ON", "LINE", "UP", "DATE", "BOOK", "STORE"],
+  ["ON", "STAGE", "COACH", "MAN", "HOLE", "PUNCH"],
+  ["OFF", "SET", "BACK", "DROP", "KICK", "BOX"],
+  ["OFF", "SHORE", "LINE", "UP", "DATE", "BOOK"],
+  ["OFF", "BEAT", "BOX", "CAR", "POOL", "SIDE"],
+  ["OFF", "HAND", "BOOK", "WORM", "HOLE", "PUNCH"],
+  ["AT", "HOME", "WORK", "OUT", "BACK", "DROP"],
+  ["AT", "LARGE", "SCALE", "MODEL", "TRAIN", "WRECK"],
+  ["SET", "UP", "TIGHT", "ROPE", "BURN", "OUT"],
+  ["SET", "BACK", "DROP", "OFF", "SHORE", "LINE"],
+  ["RING", "WORM", "HOLE", "PUNCH", "LINE", "UP"],
+  ["GUM", "DROP", "OUT", "BACK", "YARD", "WORK"],
+  ["GUM", "BALL", "GAME", "PLAY", "BOY", "HOOD"],
+  ["SKATE", "BOARD", "WALK", "OUT", "BACK", "DROP"],
+  ["SURF", "BOARD", "WALK", "OUT", "BACK", "YARD"],
+  ["KEY", "NOTE", "BOOK", "WORM", "HOLE", "PUNCH"],
+  ["KEY", "BOARD", "GAME", "PLAY", "BOOK", "WORM"],
+  ["KEY", "STONE", "WALL", "PAPER", "BACK", "YARD"],
+  ["KEY", "CHAIN", "LINK", "UP", "DATE", "BOOK"],
+  ["CLOCK", "WORK", "OUT", "BACK", "YARD", "STICK"],
+  ["CLOCK", "WISE", "MAN", "HOLE", "PUNCH", "LINE"],
+  ["ALARM", "CLOCK", "WORK", "OUT", "BACK", "DROP"],
+  ["WRIST", "WATCH", "DOG", "HOUSE", "WORK", "OUT"],
+  ["WRIST", "BAND", "WAGON", "WHEEL", "CHAIR", "MAN"],
+  ["SWEAT", "BAND", "WAGON", "WHEEL", "CHAIR", "MAN"],
+  ["SUN", "LIGHT", "HOUSE", "WORK", "OUT", "LET"],
+  ["MOON", "WALK", "OUT", "BACK", "YARD", "WORK"],
+  ["BIRTHDAY", "CAKE", "WALK", "OUT", "BACK", "DROP"],
+  ["WIND", "BREAK", "DOWN", "TOWN", "HALL", "WAY"],
+  ["RAIN", "STORM", "DRAIN", "PIPE", "LINE", "UP"],
+  ["SNOW", "STORM", "DRAIN", "PIPE", "LINE", "UP"],
+  ["STAR", "BOARD", "WALK", "OUT", "BACK", "DROP"],
+];
+
+function getTodaysPuzzle() {
+  // Defensive: filter out any chain that has duplicate words (those break the game).
+  const valid = PUZZLES.filter(chain => new Set(chain).size === chain.length);
+  const epoch = new Date(2026, 0, 1).getTime();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayNum = Math.floor((today.getTime() - epoch) / 86400000);
+  const idx = ((dayNum % valid.length) + valid.length) % valid.length;
+  return { chain: valid[idx], dayNum: dayNum + 1 };
+}
+
+// ─── State ───
+const currentPuzzle = getTodaysPuzzle();
+const TOTAL_LINKS = currentPuzzle.chain.length;
+const MAX_STRIKES = 4;
+
+// Hint allowance per difficulty — escape valve when stuck, doesn't cost a strike.
+const HINTS_BY_DIFF = { easy: 3, medium: 2, hard: 1 };
+
+let state = {
+  difficulty: 'easy',
+  solved: 1, // first word always given
+  strikes: 0,
+  guesses: [], // array of {word, correct, strikes_at_attempt}
+  done: false,
+  failed: false,
+  letterReveals: 0, // extra letters revealed for current word (beyond mode default)
+  currentGuess: '', // what user is typing right now
+  hintsUsed: 0,
+  hintsAllowed: 3,
+};
+
+// ─── Storage ───
+const STORE_RESULTS = 'linkd-results';
+const STORE_FRIENDS = 'linkd-friends';
+const STORE_PREFS = 'linkd-prefs';
+const loadResults = () => { try { return JSON.parse(localStorage.getItem(STORE_RESULTS) || '{}'); } catch { return {}; } };
+const saveResults = r => localStorage.setItem(STORE_RESULTS, JSON.stringify(r));
+const loadFriends = () => { try { return JSON.parse(localStorage.getItem(STORE_FRIENDS) || '{}'); } catch { return {}; } };
+const saveFriends = f => localStorage.setItem(STORE_FRIENDS, JSON.stringify(f));
+const loadPrefs = () => { try { return JSON.parse(localStorage.getItem(STORE_PREFS) || '{}'); } catch { return {}; } };
+const savePrefs = p => localStorage.setItem(STORE_PREFS, JSON.stringify(p));
+
+const $ = id => document.getElementById(id);
+
+// ─── Init ───
+function init() {
+  if (window.location.search.includes('reset')) {
+    const r = loadResults();
+    delete r[`p${currentPuzzle.dayNum}`];
+    saveResults(r);
+    history.replaceState({}, '', window.location.pathname);
+  }
+
+  $('puzzleNum').textContent = `№ ${currentPuzzle.dayNum}`;
+  $('puzzleNumResult').textContent = `№ ${currentPuzzle.dayNum}`;
+  $('startupFoot').textContent = `№ ${currentPuzzle.dayNum} · 4 strikes · typos don't count`;
+
+  // Check if already played today — skip the gate, show result directly
+  const results = loadResults();
+  const todayKey = `p${currentPuzzle.dayNum}`;
+  if (results[todayKey]?.submitted) {
+    $('startupGate').style.display = 'none';
+    $('appRoot').classList.remove('locked');
+    $('gameView').style.display = 'none';
+    showResult(results[todayKey]);
+    return;
+  }
+
+  // Build but keep blurred — wait for difficulty pick
+  buildChain();
+
+  // Wire up startup difficulty buttons
+  document.querySelectorAll('.startup-diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const diff = btn.dataset.diff;
+      setDifficulty(diff);
+      // Hide startup, unlock app
+      $('startupGate').style.opacity = '0';
+      $('startupGate').style.transition = 'opacity 0.25s ease';
+      setTimeout(() => {
+        $('startupGate').style.display = 'none';
+      }, 250);
+      $('appRoot').classList.remove('locked');
+      updateUI();
+      updateGuessDisplay();
+    });
+  });
+}
+
+function setDifficulty(diff) {
+  state.difficulty = diff;
+  state.hintsAllowed = HINTS_BY_DIFF[diff] ?? 2;
+  document.querySelectorAll('.difficulty-btn').forEach(b => {
+    b.dataset.active = b.dataset.diff === diff ? 'true' : 'false';
+  });
+  $('headDifficulty').dataset.mode = diff;
+  $('headDifficultyLabel').textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
+
+  const prefs = loadPrefs();
+  prefs.difficulty = diff;
+  savePrefs(prefs);
+
+  updateUI();
+}
+
+document.querySelectorAll('.difficulty-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (state.solved > 1 || state.guesses.length > 0) return; // can't change mid-game
+    setDifficulty(btn.dataset.diff);
+  });
+});
+
+function buildChain() {
+  const chainEl = $('chain');
+  chainEl.innerHTML = '';
+  for (let i = 0; i < TOTAL_LINKS; i++) {
+    const row = document.createElement('div');
+    row.className = 'chain-row';
+    row.dataset.idx = i;
+    chainEl.appendChild(row);
+  }
+}
+
+function updateUI() {
+  // Strike dots
+  const dotsEl = $('strikesDots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < MAX_STRIKES; i++) {
+    const d = document.createElement('div');
+    d.className = 'strike-dot' + (i < state.strikes ? ' used' : '');
+    dotsEl.appendChild(d);
+  }
+
+  // Show "links found / links to find" — matches the share string and excludes the seed.
+  $('progressText').textContent = `${state.solved - 1}/${TOTAL_LINKS - 1}`;
+
+  // Render chain rows
+  document.querySelectorAll('.chain-row').forEach((row, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const word = currentPuzzle.chain[i];
+    let state_attr;
+    let displayWord = '';
+
+    if (i < state.solved) {
+      // Already solved or seed word
+      state_attr = i === 0 ? 'seed' : 'solved';
+      displayWord = renderFullWord(word);
+    } else if (i === state.solved && !state.done) {
+      // Currently active
+      state_attr = 'active';
+      displayWord = renderHintedWord(word, state.difficulty, state.letterReveals);
+    } else {
+      // Locked / not yet reachable
+      state_attr = 'locked';
+      displayWord = '<span class="chain-letter hidden">—</span>';
+    }
+
+    row.dataset.state = state_attr;
+    row.innerHTML = `
+      <span class="chain-num">${num}</span>
+      <span class="chain-word">${displayWord}</span>
+    `;
+  });
+
+  // Play-bar hint text + button state — hidden when the game ends.
+  const playBar = document.querySelector('.play-bar');
+  if (playBar) playBar.style.display = state.done ? 'none' : '';
+
+  if (state.done) {
+    $('hintText').innerHTML = '';
+  } else {
+    const targetWord = currentPuzzle.chain[state.solved];
+    const prevWord = currentPuzzle.chain[state.solved - 1];
+    let line = `<strong>${prevWord}</strong> + ?`;
+    if (state.difficulty !== 'hard') {
+      line += ` <span class="play-hint-sep">·</span> ${targetWord.length} letters`;
+    }
+    $('hintText').innerHTML = line;
+  }
+
+  // Hint button state
+  const hintBtn = $('hintBtn');
+  const hintCounter = $('hintCounter');
+  if (hintBtn && hintCounter) {
+    const target = currentPuzzle.chain[state.solved];
+    const baseReveals = state.difficulty === 'easy' ? 2 : 1;
+    const totalShown = target ? Math.min(baseReveals + state.letterReveals, target.length - 1) : 0;
+    const canRevealMore = target && totalShown < target.length - 1;
+    const hintsLeft = state.hintsAllowed - state.hintsUsed;
+    hintBtn.disabled = state.done || hintsLeft <= 0 || !canRevealMore;
+    hintCounter.textContent = String(Math.max(0, hintsLeft));
+  }
+
+  // Disable keyboard when game is over
+  document.querySelectorAll('.kb-key').forEach(k => {
+    k.disabled = state.done;
+  });
+}
+
+// Reveal one extra letter without burning a strike. Limited per puzzle by difficulty.
+function useHint() {
+  if (state.done) return;
+  if (state.hintsUsed >= state.hintsAllowed) return;
+  const target = currentPuzzle.chain[state.solved];
+  if (!target) return;
+  const baseReveals = state.difficulty === 'easy' ? 2 : 1;
+  if (baseReveals + state.letterReveals >= target.length - 1) return;
+
+  state.letterReveals++;
+  state.hintsUsed++;
+  updateUI();
+
+  const row = document.querySelector(`.chain-row[data-idx="${state.solved}"]`);
+  if (row) {
+    row.classList.add('just-revealed');
+    setTimeout(() => row.classList.remove('just-revealed'), 600);
+  }
+  showToast('Letter revealed');
+}
+
+function renderFullWord(word) {
+  return [...word].map(ch => `<span class="chain-letter">${ch}</span>`).join('');
+}
+
+function renderHintedWord(word, mode, extraReveals) {
+  // mode = default # of letters shown; extraReveals adds more (from strikes + hints)
+  const letters = [...word];
+  const baseReveals = mode === 'easy' ? 2 : 1;
+  // Never reveal the full word — always leave at least one letter hidden
+  const totalReveals = Math.min(baseReveals + extraReveals, letters.length - 1);
+
+  let html = '';
+  if (mode === 'hard') {
+    // Hard: no length info — just shown letters + a generic blank marker
+    for (let i = 0; i < totalReveals; i++) {
+      html += `<span class="chain-letter">${letters[i]}</span>`;
+    }
+    html += `<span class="chain-letter hidden">__</span>`;
+  } else {
+    // Easy / Medium: full length implied via underscores
+    for (let i = 0; i < letters.length; i++) {
+      if (i < totalReveals) {
+        html += `<span class="chain-letter">${letters[i]}</span>`;
+      } else {
+        html += `<span class="chain-letter hidden">_</span>`;
+      }
+    }
+  }
+  return html;
+}
+
+// ─── Submit guess ───
+function submitGuess() {
+  if (state.done) return;
+  const raw = state.currentGuess.trim().toUpperCase();
+  if (!raw) return;
+
+  const target = currentPuzzle.chain[state.solved].toUpperCase();
+  const baseReveals = state.difficulty === 'easy' ? 2 : 1;
+  const totalShown = Math.min(baseReveals + state.letterReveals, target.length - 1);
+
+  // Suffix-completion: accept raw == target.slice(k) for any k in [0..totalShown].
+  // Player can type the full word, drop the first letter, or drop ALL shown letters
+  // and type only the unrevealed tail. e.g. target WHITE with "WH" shown accepts
+  // "WHITE", "HITE", or "ITE" — all win the link.
+  let isCorrect = false;
+  for (let k = 0; k <= totalShown; k++) {
+    if (raw === target.slice(k)) { isCorrect = true; break; }
+  }
+
+  if (isCorrect) {
+    state.guesses.push({ word: target, correct: true, atStrike: state.strikes });
+    state.solved++;
+    state.letterReveals = 0;
+    state.currentGuess = '';
+    updateGuessDisplay();
+
+    const justSolvedIdx = state.solved - 1;
+    const row = document.querySelector(`.chain-row[data-idx="${justSolvedIdx}"]`);
+    if (row) {
+      row.classList.add('just-solved');
+      setTimeout(() => row.classList.remove('just-solved'), 600);
+    }
+
+    if (state.solved >= TOTAL_LINKS) {
+      state.done = true;
+      finalizePuzzle();
+    } else {
+      updateUI();
+    }
+    return;
+  }
+
+  // Wrong. Is it a real English word combined with any of the revealed prefixes?
+  // This separates "real word, wrong guess" (strike) from "made-up letters" (typo, no strike).
+  let isWord = false;
+  for (let k = 0; k <= totalShown; k++) {
+    const candidate = (target.slice(0, k) + raw).toLowerCase();
+    if (VALID_WORDS.has(candidate)) { isWord = true; break; }
+  }
+
+  if (!isWord) {
+    // Typo / made-up word → no strike, gentle nudge.
+    const display = $('guessDisplay');
+    display.classList.add('shake', 'typo');
+    setTimeout(() => display.classList.remove('shake', 'typo'), 600);
+    showToast(`"${raw}" isn't a word — no strike, try again`);
+    // Keep the guess so the player can edit a typo, don't clear.
+    return;
+  }
+
+  // Real word, wrong answer → strike.
+  state.guesses.push({ word: raw, correct: false, atStrike: state.strikes });
+  state.strikes++;
+
+  // Reveal one more letter on a strike, in every difficulty (capped).
+  if (state.letterReveals < target.length - 1) {
+    state.letterReveals++;
+  }
+
+  $('guessDisplay').classList.add('shake');
+  setTimeout(() => $('guessDisplay').classList.remove('shake'), 500);
+
+  const row = document.querySelector(`.chain-row[data-idx="${state.solved}"]`);
+  if (row) {
+    row.classList.add('shake');
+    setTimeout(() => row.classList.remove('shake'), 500);
+  }
+
+  state.currentGuess = '';
+  updateGuessDisplay();
+
+  if (state.strikes >= MAX_STRIKES) {
+    state.done = true;
+    state.failed = true;
+    finalizePuzzle();
+  } else {
+    updateUI();
+  }
+}
+
+// ─── Guess display + on-screen keyboard ───
+function updateGuessDisplay() {
+  const display = $('guessDisplay');
+  const text = $('guessDisplayText');
+  if (state.currentGuess === '') {
+    display.classList.add('empty');
+    text.textContent = '';
+    text.dataset.placeholder = 'Type the missing letters';
+  } else {
+    display.classList.remove('empty');
+    text.textContent = state.currentGuess;
+  }
+}
+
+function pressKey(key) {
+  if (state.done) return;
+  if (key === 'ENTER') {
+    submitGuess();
+    return;
+  }
+  if (key === 'BACK') {
+    state.currentGuess = state.currentGuess.slice(0, -1);
+    updateGuessDisplay();
+    return;
+  }
+  // Letter — only A-Z
+  if (/^[A-Z]$/.test(key)) {
+    // Cap guess length at 12 (longest reasonable word)
+    if (state.currentGuess.length < 12) {
+      state.currentGuess += key;
+      updateGuessDisplay();
+    }
+  }
+}
+
+// Wire up on-screen keyboard
+document.querySelectorAll('.kb-key').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.key;
+    pressKey(key);
+    // Visual flash feedback
+    btn.classList.add('flash');
+    setTimeout(() => btn.classList.remove('flash'), 200);
+  });
+});
+
+// Wire up hint button
+$('hintBtn').addEventListener('click', useHint);
+
+// Wire up physical keyboard (desktop)
+document.addEventListener('keydown', e => {
+  if (state.done) return;
+  // Don't intercept if typing in a modal input
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+  // Don't intercept if startup modal showing
+  if ($('appRoot').classList.contains('locked')) return;
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    pressKey('ENTER');
+  } else if (e.key === 'Backspace') {
+    e.preventDefault();
+    pressKey('BACK');
+  } else if (/^[a-zA-Z]$/.test(e.key)) {
+    e.preventDefault();
+    pressKey(e.key.toUpperCase());
+  }
+});
+
+function finalizePuzzle() {
+  const result = {
+    puzzleId: currentPuzzle.dayNum,
+    dayNum: currentPuzzle.dayNum,
+    difficulty: state.difficulty,
+    chain: currentPuzzle.chain,
+    solved: state.solved,
+    total: TOTAL_LINKS,
+    strikes: state.strikes,
+    failed: state.failed,
+    hintsUsed: state.hintsUsed,
+    hintsAllowed: state.hintsAllowed,
+    submitted: true,
+    date: new Date().toISOString(),
+  };
+
+  const results = loadResults();
+  results[`p${currentPuzzle.dayNum}`] = result;
+  saveResults(results);
+
+  setTimeout(() => {
+    $('gameView').style.transition = 'opacity 0.3s ease';
+    $('gameView').style.opacity = '0';
+    setTimeout(() => {
+      $('gameView').style.display = 'none';
+      showResult(result);
+    }, 300);
+  }, 600);
+}
+
+function showResult(result) {
+  $('resultView').style.display = 'block';
+  $('puzzleNumResult').textContent = `№ ${result.dayNum}`;
+  $('headDifficultyResult').dataset.mode = result.difficulty;
+  $('headDifficultyResultLabel').textContent = result.difficulty.charAt(0).toUpperCase() + result.difficulty.slice(1);
+
+  $('resultScore').textContent = result.solved;
+  $('resultScoreOf').textContent = `/${result.total}`;
+
+  const tier = scoreTier(result);
+  const tierEl = $('resultTier');
+  tierEl.textContent = tier.label;
+  tierEl.classList.toggle('fail', result.failed);
+  $('resultModeTag').textContent = result.difficulty;
+  $('resultBlurb').textContent = tier.blurb;
+
+  // Meta line: strikes + hints used
+  const hintsUsed = result.hintsUsed || 0;
+  const strikeWord = result.strikes === 1 ? 'strike' : 'strikes';
+  const hintWord = hintsUsed === 1 ? 'hint' : 'hints';
+  $('resultMetaLine').innerHTML =
+    `<strong>${result.strikes}</strong> ${strikeWord} · <strong>${hintsUsed}</strong> ${hintWord} used`;
+
+  // Build emoji string — one square per link
+  const emojiHtml = result.chain.map((_, i) => {
+    if (i === 0) return `<span>🟦</span>`; // seed
+    if (i < result.solved) return `<span>🟩</span>`; // solved
+    return `<span>⬜</span>`; // unsolved
+  }).join('');
+  $('resultEmojis').innerHTML = emojiHtml;
+
+  // Reveal full chain with the linking compound shown between each pair —
+  // turns the result into the "aha" moment of seeing what tied the words together.
+  const revealEl = $('revealChain');
+  revealEl.innerHTML = '';
+  result.chain.forEach((word, i) => {
+    const isSolved = i < result.solved;
+    const row = document.createElement('div');
+    row.className = 'reveal-row';
+    row.innerHTML = `
+      <span class="reveal-rank">${String(i + 1).padStart(2, '0')}</span>
+      <span class="reveal-word">${word}</span>
+      <span class="reveal-mark ${isSolved ? 'solved' : 'unsolved'}">${isSolved ? '✓' : '✗'}</span>
+    `;
+    revealEl.appendChild(row);
+
+    if (i < result.chain.length - 1) {
+      const next = result.chain[i + 1];
+      const bridge = document.createElement('div');
+      bridge.className = 'reveal-bridge';
+      bridge.innerHTML =
+        `<span class="bridge-arrow">↳</span>` +
+        `<span class="bridge-compound">${word}${next}</span>`;
+      revealEl.appendChild(bridge);
+    }
+  });
+}
+
+function scoreTier(result) {
+  if (result.failed) {
+    if (result.solved <= 1) return { label: 'Tough one', blurb: 'A puzzle for another day.' };
+    return { label: 'Mixed', blurb: `Got ${result.solved - 1} link${result.solved - 1 === 1 ? '' : 's'} before the strikes ran out.` };
+  }
+  const hints = result.hintsUsed || 0;
+  if (result.strikes === 0 && hints === 0) return { label: 'Flawless', blurb: 'No strikes, no hints — every link cold.' };
+  if (result.strikes === 0) return { label: 'Brilliant', blurb: 'Zero strikes — chain solved clean.' };
+  if (result.strikes === 1) return { label: 'Strong', blurb: 'One slip — almost perfect.' };
+  if (result.strikes === 2) return { label: 'Solid', blurb: 'Worked through the chain confidently.' };
+  return { label: 'Made it', blurb: 'Chain complete — survived the strikes.' };
+}
+
+// ─── Share ───
+$('shareBtn').addEventListener('click', () => {
+  const r = loadResults()[`p${currentPuzzle.dayNum}`];
+  if (!r) return;
+
+  const emojis = r.chain.map((_, i) => {
+    if (i === 0) return '🟦';
+    if (i < r.solved) return '🟩';
+    return '⬜';
+  }).join('');
+
+  const modeLabel = r.difficulty.toUpperCase();
+  const linksGot = r.failed ? r.solved - 1 : r.total - 1;
+  const strikePart = `${r.strikes} strike${r.strikes === 1 ? '' : 's'}`;
+  const hintsUsed = r.hintsUsed || 0;
+  const hintPart = hintsUsed > 0
+    ? `, ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'}`
+    : '';
+  const status = `${linksGot}/${r.total - 1} links, ${strikePart}${hintPart}`;
+
+  const text = `Linkd № ${r.dayNum} · ${modeLabel}\n${emojis}\n${status}`;
+
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => copyToClipboard(text));
+  } else {
+    copyToClipboard(text);
+  }
+});
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+$('replayBtn').addEventListener('click', () => {
+  const r = loadResults();
+  delete r[`p${currentPuzzle.dayNum}`];
+  saveResults(r);
+  window.location.reload();
+});
+
+// ─── Modals ───
+window.closeModal = id => $(id).classList.remove('show');
+
+$('navHelp').addEventListener('click', () => $('helpModal').classList.add('show'));
+$('navStats').addEventListener('click', () => { renderStats(); $('statsModal').classList.add('show'); });
+$('navFriends').addEventListener('click', () => { renderFriends(); $('friendsModal').classList.add('show'); });
+$('compareBtn').addEventListener('click', () => { renderFriends(); $('friendsModal').classList.add('show'); });
+
+[$('helpModal'), $('statsModal'), $('friendsModal')].forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+if (!localStorage.getItem('linkd-helped')) {
+  setTimeout(() => $('helpModal').classList.add('show'), 600);
+  localStorage.setItem('linkd-helped', '1');
+}
+
+function renderStats() {
+  const entries = Object.values(loadResults());
+  const played = entries.length;
+  const won = entries.filter(e => !e.failed).length;
+  const flawless = entries.filter(e => !e.failed && e.strikes === 0).length;
+
+  $('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${played}</div><div class="stat-label">Played</div></div>
+    <div class="stat-card"><div class="stat-num">${won}</div><div class="stat-label">Won</div></div>
+    <div class="stat-card"><div class="stat-num">${flawless}</div><div class="stat-label">Flawless</div></div>
+  `;
+
+  const recent = entries.sort((a, b) => b.dayNum - a.dayNum).slice(0, 7);
+  $('recentList').innerHTML = recent.length
+    ? recent.map(e => `
+        <div class="recent-row">
+          <span class="recent-puzzle">№ ${e.dayNum}<span class="recent-mode">${e.difficulty}</span></span>
+          <span class="recent-score">${e.failed ? '✗' : '✓'} ${e.solved - 1}/${e.total - 1} · ${e.strikes}✗</span>
+        </div>`).join('')
+    : '<div class="empty-state">No puzzles played yet</div>';
+}
+
+function parseFriendShare(text) {
+  // Linkd № 7 · EASY
+  // 🟦🟩🟩🟩🟩🟩
+  // 5/5 links, 1 strike, 2 hints
+  const numMatch = text.match(/Linkd\s*(?:№|#)\s*(\d+)/i);
+  const modeMatch = text.match(/·\s*(EASY|MEDIUM|HARD)/i);
+  const strikesMatch = text.match(/(\d+)\s*strikes?/i);
+  const hintsMatch = text.match(/(\d+)\s*hints?/i);
+  const linksMatch = text.match(/(\d+)\s*\/\s*(\d+)\s*links?/i);
+
+  if (!numMatch || !modeMatch || !linksMatch) return null;
+  const solvedLinks = parseInt(linksMatch[1], 10);
+  const totalLinks = parseInt(linksMatch[2], 10);
+  return {
+    dayNum: parseInt(numMatch[1], 10),
+    difficulty: modeMatch[1].toLowerCase(),
+    solved: solvedLinks + 1,        // +1 because share string counts the seed separately
+    total: totalLinks + 1,
+    strikes: strikesMatch ? parseInt(strikesMatch[1], 10) : 0,
+    hintsUsed: hintsMatch ? parseInt(hintsMatch[1], 10) : 0,
+    failed: solvedLinks < totalLinks,
+  };
+}
+
+$('addFriendBtn').addEventListener('click', () => {
+  const text = $('friendInput').value.trim();
+  const name = $('friendName').value.trim();
+  if (!text || !name) { showToast('Add a name and result'); return; }
+  const parsed = parseFriendShare(text);
+  if (!parsed) { showToast("Couldn't read that result"); return; }
+
+  const friends = loadFriends();
+  if (!friends[name]) friends[name] = {};
+  friends[name][`p${parsed.dayNum}`] = parsed;
+  saveFriends(friends);
+
+  $('friendInput').value = '';
+  $('friendName').value = '';
+  showToast(`${name} added`);
+  renderFriends();
+});
+
+// Score for ranking: solved links × difficulty multiplier − strike + hint penalties.
+// Hints carry a small penalty so leaderboards differentiate, but they're cheap enough
+// that using them when stuck is still the right call.
+function rankingScore(r) {
+  const linkScore = r.failed ? r.solved - 1 : (r.total - 1);
+  const diffMultiplier = r.difficulty === 'hard' ? 1.5 : r.difficulty === 'medium' ? 1.2 : 1.0;
+  const strikePenalty = r.strikes * 0.5;
+  const hintPenalty = (r.hintsUsed || 0) * 0.25;
+  return Math.round((linkScore * diffMultiplier - strikePenalty - hintPenalty) * 10) / 10;
+}
+
+function renderFriends() {
+  const friends = loadFriends();
+  const myResults = loadResults();
+  const todayKey = `p${currentPuzzle.dayNum}`;
+
+  $('todayCompareTitle').textContent = `Today's Leaderboard — № ${currentPuzzle.dayNum}`;
+
+  const todayPlayers = [];
+  if (myResults[todayKey]) todayPlayers.push({ name: 'You', result: myResults[todayKey], isYou: true });
+  Object.entries(friends).forEach(([name, plays]) => {
+    if (plays[todayKey]) todayPlayers.push({ name, result: plays[todayKey] });
+  });
+  todayPlayers.sort((a, b) => rankingScore(b.result) - rankingScore(a.result));
+
+  $('todayCompareList').innerHTML = todayPlayers.length
+    ? todayPlayers.map((p, i) => {
+        const r = p.result;
+        const linksGot = r.failed ? r.solved - 1 : r.total - 1;
+        return `
+          <div class="ranking-row${p.isYou ? ' you' : ''}">
+            <div class="left">
+              <span class="ranking-rank">0${i + 1}</span>
+              <span class="ranking-name">${escapeHtml(p.name)}</span>
+              <span class="ranking-mode">${r.difficulty}</span>
+            </div>
+            <span class="ranking-score">${linksGot}/${r.total - 1}<span class="of"> · ${r.strikes}✗</span></span>
+          </div>`;
+      }).join('')
+    : '<div class="empty-state">Nobody has played yet</div>';
+
+  // All-time: by win rate weighted by difficulty
+  const allPlayers = [];
+  const myEntries = Object.values(myResults);
+  if (myEntries.length) {
+    const totalScore = myEntries.reduce((s, r) => s + rankingScore(r), 0);
+    allPlayers.push({ name: 'You', avg: totalScore / myEntries.length, played: myEntries.length, isYou: true });
+  }
+  Object.entries(friends).forEach(([name, plays]) => {
+    const arr = Object.values(plays);
+    if (arr.length) {
+      const totalScore = arr.reduce((s, r) => s + rankingScore(r), 0);
+      allPlayers.push({ name, avg: totalScore / arr.length, played: arr.length });
+    }
+  });
+  allPlayers.sort((a, b) => b.avg - a.avg);
+
+  $('allTimeCompareList').innerHTML = allPlayers.length
+    ? allPlayers.map((p, i) => `
+        <div class="ranking-row${p.isYou ? ' you' : ''}">
+          <div class="left">
+            <span class="ranking-rank">0${i + 1}</span>
+            <span class="ranking-name">${escapeHtml(p.name)}</span>
+            <span class="ranking-mode">${p.played} played</span>
+          </div>
+          <span class="ranking-score">${p.avg.toFixed(1)}<span class="of"> avg</span></span>
+        </div>`).join('')
+    : '<div class="empty-state">Add a friend to see this</div>';
+
+  const friendNames = Object.keys(friends);
+  $('friendsListSection').innerHTML = friendNames.length
+    ? `<div class="leaderboard-section"><h3>Your Friends</h3>` + friendNames.map(n => `
+        <div class="friend-list-row">
+          <div><span class="ranking-name">${escapeHtml(n)}</span> <span class="ranking-mode" style="margin-left: 8px;">${Object.keys(friends[n]).length} result${Object.keys(friends[n]).length === 1 ? '' : 's'}</span></div>
+          <button class="friend-delete" data-name="${escapeHtml(n)}">×</button>
+        </div>`).join('') + '</div>'
+    : '';
+
+  document.querySelectorAll('.friend-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = loadFriends();
+      delete f[btn.dataset.name];
+      saveFriends(f);
+      renderFriends();
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+init();
+</script>
+</body>
+</html>

@@ -2542,14 +2542,83 @@
     .startup-title { font-size: 48px; }
   }
 
-  /* LG: laptops, desktops (1024px+) */
+  /* LG: laptops, desktops (1024px+).
+     Editorial daily-puzzle convention is a narrow center column — but
+     580px on a 1440px monitor looks lost. Bump the column meaningfully
+     and scale up type so the page feels intentional, not shrunk-down. */
   @media (min-width: 1024px) {
-    .app { max-width: 580px; padding: 40px 28px 100px; }
+    .app { max-width: 680px; padding: 56px 36px 80px; }
+    .nav { margin-bottom: 40px; padding-bottom: 16px; }
+    .wordmark { font-size: 26px; }
+    .nav-link { font-size: 12px; padding: 12px 12px; }
+    .streak-chip { font-size: 15px; }
+    .streak-chip .flame { width: 16px; height: 18px; }
+
+    .home { gap: 36px; }
+    .home-tagline-eyebrow { font-size: 12px; }
+    .home-tagline-headline { font-size: 32px; }
+
+    .today-card { padding: 28px; }
+    .today-card.unplayed { box-shadow: 7px 7px 0 var(--ink); }
+    .today-card-title { font-size: 28px; }
+    .today-card-preview { font-size: 13px; }
+    .today-played-score .num { font-size: 80px; }
+    .today-played-score .of { font-size: 28px; }
+    .today-played-tier { font-size: 11px; padding: 4px 10px; }
+    .today-played-meta { font-size: 12px; }
+    .today-played-arrow { font-size: 32px; }
+    .today-card-play { padding: 14px 18px; font-size: 13px; }
+
+    .home-section-eyebrow { font-size: 12px; }
+    .explore-row { padding: 18px 6px; min-height: 64px; }
+    .explore-row-label { font-size: 19px; }
+    .explore-row-caption { font-size: 11px; }
+    .explore-row-chevron { font-size: 24px; }
+
     .chain-row { height: 62px; padding: 0 18px; }
     .chain-word { font-size: 22px; }
     .chain-num { font-size: 12px; }
-    .result-score { font-size: 108px; }
+
+    .result-header { font-size: 12px; margin-bottom: 24px; }
+    .result-tier, .result-mode-tag { font-size: 11px; padding: 7px 14px; }
+    .result-score { font-size: 120px; }
+    .result-score .of { font-size: 38px; }
+    .result-meta { font-size: 12px; margin-bottom: 22px; }
+    .chain-swatch { width: 28px; height: 28px; }
     .reveal-word { font-size: 20px; }
+    .reveal-bridge { padding-left: 44px; }
+    .reveal-bridge .bridge-compound { font-size: 14px; }
+    .theme-reveal { padding: 20px; }
+    .theme-reveal-name { font-size: 24px; }
+
+    .modal { max-width: 540px; padding: 36px 36px 30px; }
+    .modal h2 { font-size: 34px; }
+    .modal p { font-size: 14px; }
+
+    .ach-grid { gap: 12px; }
+    .ach-tile { min-height: 150px; padding: 18px; }
+    .ach-tile-glyph { font-size: 32px; }
+    .ach-tile-title { font-size: 16px; }
+  }
+
+  /* XL: wide displays (1440px+).
+     Larger desktops get one more proportional bump — type, padding,
+     swatches — without going to a stretched-full-width layout, which
+     would break the editorial feel. */
+  @media (min-width: 1440px) {
+    .app { max-width: 760px; padding: 72px 40px 96px; }
+    .home { gap: 44px; }
+    .home-tagline-headline { font-size: 38px; }
+    .today-card { padding: 32px; }
+    .today-card-title { font-size: 32px; }
+    .today-played-score .num { font-size: 96px; }
+    .today-played-score .of { font-size: 34px; }
+    .explore-row-label { font-size: 21px; }
+    .result-score { font-size: 140px; }
+    .result-score .of { font-size: 44px; }
+    .reveal-word { font-size: 22px; }
+    .modal { max-width: 600px; }
+    .modal h2 { font-size: 38px; }
   }
 </style>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="cec9cd34-0d6f-4615-855b-58a0733cf115"></script>

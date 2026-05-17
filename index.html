@@ -77,6 +77,7 @@
     padding-bottom: 16px;
     border-bottom: 1.5px solid var(--ink);
     margin-bottom: 32px;
+    gap: 12px;
   }
 
   .wordmark {
@@ -88,6 +89,10 @@
     user-select: none;
     text-transform: uppercase;
     line-height: 1;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
   }
 
   .wordmark .accent {
@@ -96,9 +101,34 @@
     font-weight: 700;
   }
 
+  /* Streak chip in nav — only renders when streak > 0.
+     Custom flame SVG inherits accent via currentColor. */
+  .streak-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .streak-chip .flame {
+    width: 14px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+
+  .streak-chip.hidden { display: none; }
+
   .nav-actions {
     display: flex;
     gap: 0;
+    align-items: center;
   }
 
   .nav-link {
@@ -109,15 +139,307 @@
     font-family: var(--mono);
     font-size: 11px;
     font-weight: 500;
-    padding: 6px 10px;
+    padding: 12px 10px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     transition: color 0.12s, background 0.12s;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 
   .nav-link:hover {
     color: var(--ink);
     background: var(--accent-bg);
+  }
+
+  /* ─── Home view ─── */
+  .home {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding-bottom: 24px;
+  }
+
+  .home-tagline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* The ONE top eyebrow that keeps the ▸ triangle in accent.
+     All sheet eyebrows drop the triangle and use ink-muted. */
+  .home-tagline-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+  }
+
+  .home-tagline-headline {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 26px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+  }
+
+  .home-tagline-headline .accent {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  .home-section-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-muted);
+  }
+
+  .home-today {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .home-today-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .home-today-head-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+  }
+
+  /* Today card — unplayed state (with offset shadow). */
+  .today-card {
+    background: var(--bg-card);
+    border: 2px solid var(--ink);
+    padding: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: relative;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    color: inherit;
+    transition: transform 0.15s;
+  }
+
+  .today-card.unplayed {
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+
+  .today-card.unplayed:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 var(--ink);
+  }
+
+  .today-card.unplayed:active {
+    transform: translate(2px, 2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  .today-card.played {
+    border-width: 1.5px;
+    box-shadow: none;
+  }
+
+  .today-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .today-card-title {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .today-card-preview {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-muted);
+  }
+
+  .today-card-play {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+
+  /* Today card — played state. Score is dominant. */
+  .today-played-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .today-played-tier {
+    display: inline-block;
+    width: max-content;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border: 1.2px solid var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .today-played-tier.fail {
+    color: var(--ink);
+    border-color: var(--ink);
+    background: var(--bg-soft);
+  }
+
+  .today-played-score {
+    font-family: var(--display);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+  }
+
+  .today-played-score .num {
+    font-size: 56px;
+  }
+
+  .today-played-score .of {
+    font-size: 22px;
+    color: var(--ink-faint);
+    margin-left: 2px;
+  }
+
+  .today-played-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+  }
+
+  .today-played-arrow {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  /* Explore list — table style, no icons, no card background. */
+  .home-explore {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .explore-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .explore-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    min-height: 56px;
+    font-family: inherit;
+    color: inherit;
+    transition: background 0.12s;
+  }
+
+  .explore-row:last-child { border-bottom: 0; }
+
+  .explore-row:hover,
+  .explore-row:active {
+    background: var(--bg-soft);
+  }
+
+  .explore-row-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .explore-row-label {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .explore-row-caption {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+  }
+
+  .explore-row-chevron {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--ink-muted);
+    flex-shrink: 0;
   }
 
   /* ─── Section header (used in result view only) ─── */
@@ -546,15 +868,63 @@
   }
 
   /* ─── Result ─── */
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .result-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 0;
+    padding: 0 8px 0 0;
+    min-height: 44px;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+  }
+
+  .result-back:hover { color: var(--ink); }
+
+  .result-header-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result-header-right .sep {
+    color: var(--ink-faint);
+  }
+
+  .result-archive-tag {
+    color: var(--ink-muted);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+  }
+
   .result {
-    margin: 24px 0 32px;
+    margin: 0 0 32px;
   }
 
   .result-tier-row {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
   }
 
   .result-tier {
@@ -565,7 +935,7 @@
     padding: 6px 12px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.15em;
     border: 1.5px solid var(--accent);
   }
 
@@ -583,71 +953,252 @@
     padding: 6px 12px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.15em;
     border: 1.5px solid var(--ink);
   }
 
   .result-score {
     font-family: var(--display);
     font-weight: 900;
-    font-size: clamp(64px, 16vw, 110px);
+    font-size: clamp(72px, 18vw, 96px);
     line-height: 0.9;
     letter-spacing: -0.04em;
     color: var(--ink);
     margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
   }
 
   .result-score .of {
     color: var(--ink-faint);
-    font-size: 0.32em;
-    font-weight: 700;
+    font-size: 0.33em;
+    font-weight: 800;
     margin-left: 4px;
   }
 
-  .result-blurb {
+  /* Sentence-case mono meta line for strikes/hints. Matches gameMeta(). */
+  .result-meta {
     font-family: var(--mono);
-    font-size: 13px;
-    color: var(--ink);
-    margin-bottom: 24px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 11px;
     font-weight: 500;
-    line-height: 1.6;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    margin-bottom: 18px;
   }
 
-  .result-emojis {
-    font-size: 26px;
-    letter-spacing: 4px;
-    margin-bottom: 24px;
-    line-height: 1;
-  }
+  .result-meta .num { color: var(--ink); font-weight: 700; }
+  .result-meta .sep { color: var(--ink-faint); margin: 0 4px; font-weight: 700; }
 
-  .result-emojis span {
-    display: inline-block;
-    animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  }
-  .result-emojis span:nth-child(1) { animation-delay: 0.2s; }
-  .result-emojis span:nth-child(2) { animation-delay: 0.27s; }
-  .result-emojis span:nth-child(3) { animation-delay: 0.34s; }
-  .result-emojis span:nth-child(4) { animation-delay: 0.41s; }
-  .result-emojis span:nth-child(5) { animation-delay: 0.48s; }
-  .result-emojis span:nth-child(6) { animation-delay: 0.55s; }
-  .result-emojis span:nth-child(7) { animation-delay: 0.62s; }
-  .result-emojis span:nth-child(8) { animation-delay: 0.69s; }
-  .result-emojis span:nth-child(9) { animation-delay: 0.76s; }
-  .result-emojis span:nth-child(10) { animation-delay: 0.83s; }
-
-  .result-actions {
+  /* Chain swatches: 24×24 ink-bordered rectangles, not OS emoji. */
+  .result-swatches {
     display: flex;
-    gap: 6px;
+    gap: 5px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
   }
 
+  .chain-swatch {
+    width: 24px;
+    height: 24px;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .chain-swatch[data-state="seed"]   { background: var(--ink); }
+  .chain-swatch[data-state="solved"] { background: var(--correct); }
+  .chain-swatch[data-state="missed"] { background: var(--bg); }
+
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .result-primary {
+    width: 100%;
+    background: var(--ink);
+    color: var(--bg);
+    border: 1.5px solid var(--ink);
+    padding: 14px 18px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+
+  .result-primary:hover { background: var(--accent); border-color: var(--accent); }
+
+  .result-secondaries {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .result-secondary {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    padding: 12px 8px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    min-height: 44px;
+    transition: color 0.12s;
+  }
+
+  .result-secondary:hover { color: var(--ink); }
+
+  .result-secondary-divider {
+    width: 1px;
+    background: var(--rule);
+    flex-shrink: 0;
+    margin: 8px 0;
+  }
+
+  /* Achievement unlock banner — appears above swatches on result view. */
+  .unlock-banner {
+    background: var(--bg-card);
+    border: 2px solid var(--ink);
+    padding: 16px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 5px 5px 0 var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    font-family: inherit;
+    color: inherit;
+    transition: transform 0.15s;
+  }
+
+  .unlock-banner:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 var(--ink);
+  }
+
+  .unlock-banner-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+  }
+
+  .unlock-banner-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .unlock-banner-glyph {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--accent);
+    width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .unlock-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .unlock-banner-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  .unlock-banner-blurb {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+  }
+
+  .unlock-banner-foot {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    padding-top: 4px;
+  }
+
+  /* Theme reveal card — below chain reveal on wins only. */
+  .theme-reveal {
+    margin-top: 24px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--ink);
+    padding: 16px;
+    position: relative;
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+  }
+
+  .theme-reveal.visible { opacity: 1; }
+
+  /* The 4px accent stripe at the left edge. */
+  .theme-reveal::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--accent);
+  }
+
+  .theme-reveal-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+
+  .theme-reveal-name {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+
   /* ─── Reveal full chain ─── */
-  .reveal-section {
-    margin-top: 32px;
-    padding-top: 18px;
-    border-top: 1.5px solid var(--ink);
+  .reveal-divider {
+    height: 1.5px;
+    background: var(--ink);
+    margin-top: 4px;
+    margin-bottom: 18px;
   }
 
   .reveal-label {
@@ -655,7 +1206,7 @@
     font-size: 11px;
     color: var(--ink);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     margin-bottom: 14px;
   }
@@ -663,29 +1214,26 @@
   .reveal-chain {
     display: flex;
     flex-direction: column;
-    gap: 8px;
   }
 
+  /* Each row + bridge fades & slides in via JS-controlled .revealed class,
+     not CSS nth-child delays — chain lengths vary (5–9), so the JS driver
+     can stagger them correctly and fire haptics at the first/last beat. */
   .reveal-row {
     display: grid;
     grid-template-columns: 22px 1fr auto;
     gap: 14px;
     align-items: center;
     padding: 10px 0;
-    border-bottom: 1px solid var(--rule);
-    animation: slideIn 0.4s ease-out both;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.35s ease-out, transform 0.35s ease-out;
   }
-  .reveal-row:last-child { border-bottom: none; }
-  .reveal-row:nth-child(1) { animation-delay: 0.3s; }
-  .reveal-row:nth-child(2) { animation-delay: 0.4s; }
-  .reveal-row:nth-child(3) { animation-delay: 0.5s; }
-  .reveal-row:nth-child(4) { animation-delay: 0.6s; }
-  .reveal-row:nth-child(5) { animation-delay: 0.7s; }
-  .reveal-row:nth-child(6) { animation-delay: 0.8s; }
-  .reveal-row:nth-child(7) { animation-delay: 0.9s; }
-  .reveal-row:nth-child(8) { animation-delay: 1.0s; }
-  .reveal-row:nth-child(9) { animation-delay: 1.1s; }
-  .reveal-row:nth-child(10) { animation-delay: 1.2s; }
+
+  .reveal-row.revealed {
+    opacity: 1;
+    transform: translateX(0);
+  }
 
   .reveal-rank {
     font-family: var(--mono);
@@ -700,7 +1248,7 @@
     font-weight: 800;
     color: var(--ink);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
   }
 
   .reveal-mark {
@@ -711,35 +1259,58 @@
     text-align: center;
   }
 
+  /* Solved gets the earned green check. Missed uses muted ink ×,
+     NOT accent — failure isn't an "earned moment" and dotting every
+     missed row red was burning the rationing budget. */
   .reveal-mark.solved { color: var(--correct); }
-  .reveal-mark.unsolved { color: var(--accent); }
+  .reveal-mark.unsolved { color: var(--ink-muted); }
 
-  /* Compound "bridge" shown between rows in the reveal */
+  /* Compound "bridge" — ↳ glyph in accent, compound word in ink-soft.
+     A 6-row chain has 5 bridges; if the compound were accent too,
+     that's 5+ red marks per viewport, which cheapens the accent. */
   .reveal-bridge {
     font-family: var(--mono);
     font-size: 10px;
     color: var(--ink-muted);
-    padding: 3px 14px 3px 40px;
-    letter-spacing: 0.06em;
+    padding: 4px 14px 4px 36px;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     line-height: 1.2;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.35s ease-out 0.05s, transform 0.35s ease-out 0.05s;
+  }
+
+  .reveal-bridge.revealed {
+    opacity: 1;
+    transform: translateX(0);
   }
 
   .reveal-bridge .bridge-arrow {
-    color: var(--ink-faint);
+    color: var(--accent);
     font-weight: 700;
+    font-size: 11px;
   }
 
   .reveal-bridge .bridge-compound {
-    color: var(--accent);
+    color: var(--ink-soft);
     font-family: var(--display);
     font-weight: 800;
-    letter-spacing: 0.01em;
-    font-size: 12px;
+    letter-spacing: 0.02em;
+    font-size: 13px;
   }
+
+  .reveal-bridge-rule {
+    height: 1px;
+    background: var(--rule);
+    opacity: 0;
+    transition: opacity 0.35s ease-out 0.05s;
+  }
+
+  .reveal-bridge-rule.revealed { opacity: 1; }
 
   /* ─── Modal ─── */
   .modal-bg {
@@ -769,30 +1340,52 @@
     animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
+  /* Close button: visible 36×36, full 44×44 hit area via padding. */
   .modal-close {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: -4px;
+    right: -4px;
     background: transparent;
-    border: 1.5px solid var(--ink);
+    border: 0;
     color: var(--ink);
     cursor: pointer;
-    font-size: 16px;
+    font-size: 22px;
     line-height: 1;
-    width: 30px;
-    height: 30px;
+    width: 44px;
+    height: 44px;
     font-family: var(--mono);
+    font-weight: 700;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-close::before {
+    content: '×';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--bg);
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-size: 20px;
     font-weight: 700;
     transition: background 0.15s, color 0.15s;
   }
-  .modal-close:hover { background: var(--ink); color: var(--bg); }
 
+  .modal-close:hover::before { background: var(--ink); color: var(--bg); }
+
+  /* Sheet eyebrows drop the ▸ triangle and use ink-muted.
+     The triangle stays on ONE place: home top "▸ A daily word game". */
   .modal-eyebrow {
     font-family: var(--mono);
     font-size: 10px;
-    color: var(--accent);
+    color: var(--ink-muted);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     margin-bottom: 8px;
   }
@@ -809,14 +1402,15 @@
 
   .modal h2 .accent { color: var(--accent); font-style: italic; font-weight: 700; }
 
+  /* Sheet body — sentence case mono. Uppercase mono is reserved
+     for labels, eyebrows, captions, section headers. */
   .modal p {
     color: var(--ink-soft);
     margin-bottom: 12px;
     font-family: var(--mono);
-    font-size: 12px;
-    line-height: 1.65;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    font-size: 13px;
+    line-height: 1.55;
+    letter-spacing: 0.015em;
   }
 
   .modal h3 {
@@ -825,13 +1419,39 @@
     color: var(--ink);
     margin: 20px 0 10px;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     border-top: 1px solid var(--ink);
     padding-top: 14px;
   }
 
   .modal h3:first-of-type { margin-top: 18px; }
+
+  /* Two-column spec row used in Help → Difficulty section. */
+  .spec-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    align-items: baseline;
+    padding: 6px 0;
+  }
+
+  .spec-row-label {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+
+  .spec-row-detail {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    line-height: 1.45;
+  }
 
   .modal .example {
     font-family: var(--display);
@@ -1026,6 +1646,307 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
+
+  .empty-state-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 0;
+  }
+
+  .empty-state-cta .label {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .empty-state-cta .sub {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: -6px;
+  }
+
+  .empty-state-cta button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: var(--ink);
+    color: var(--bg);
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    min-height: 44px;
+  }
+
+  /* ─── Achievements ─── */
+  .ach-progress {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .ach-progress .num {
+    color: var(--ink);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ach-progress .lbl { color: var(--ink-muted); font-weight: 500; }
+
+  .ach-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .ach-tile {
+    background: var(--bg-soft);
+    border: 1px solid var(--ink);
+    padding: 14px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 130px;
+    opacity: 0.65;
+  }
+
+  .ach-tile.earned {
+    background: var(--bg-card);
+    border-width: 1.5px;
+    opacity: 1;
+  }
+
+  .ach-tile-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .ach-tile-glyph {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--ink-muted);
+  }
+
+  .ach-tile.earned .ach-tile-glyph { color: var(--accent); }
+
+  .ach-tile-check {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--correct);
+  }
+
+  .ach-tile-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    line-height: 1.15;
+  }
+
+  .ach-tile.earned .ach-tile-title { color: var(--ink); }
+
+  .ach-tile-blurb {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    line-height: 1.4;
+  }
+
+  .ach-tile.earned::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+
+  /* ─── Archive ─── */
+  .archive-intro {
+    color: var(--ink-soft);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    letter-spacing: 0.015em;
+    margin-bottom: 10px;
+  }
+
+  .archive-list {
+    background: var(--bg-card);
+    border: 1px solid var(--ink);
+  }
+
+  .archive-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    background: transparent;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    min-height: 56px;
+    transition: background 0.12s;
+  }
+
+  .archive-row:last-child { border-bottom: 0; }
+  .archive-row:hover { background: var(--bg-soft); }
+
+  .archive-day {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    width: 56px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .archive-meta {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .archive-score {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  .archive-score.failed { color: var(--ink-muted); }
+
+  .archive-mode {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+  }
+
+  .archive-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+  }
+
+  .archive-unplayed {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    flex: 1;
+  }
+
+  .archive-chevron {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+  }
+
+  /* ─── Settings & freeze ─── */
+  .settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .settings-row:last-child { border-bottom: 0; }
+
+  .settings-row-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+  .settings-row-label {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .settings-row-caption {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+  }
+
+  .freeze-count {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .freeze-count .flame { width: 14px; height: 16px; color: var(--accent); }
+
+  /* Discreet App Store link in More sheet — was a card in the old layout. */
+  .help-store-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ink);
+    border-bottom: 1.5px solid var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+    padding-bottom: 1px;
+  }
+  .help-store-link .ext { color: var(--accent); font-weight: 800; margin-left: 2px; }
 
   /* Toast */
   .toast {
@@ -1283,7 +2204,7 @@
   .startup-diff-btn {
     background: var(--bg-card);
     border: 1.5px solid var(--ink);
-    border-left-width: 6px;
+    border-left-width: 4px;
     padding: 16px 18px;
     cursor: pointer;
     font-family: var(--mono);
@@ -1292,11 +2213,20 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-height: 44px;
   }
 
-  .startup-diff-btn[data-diff="easy"]   { border-left-color: var(--correct); }
-  .startup-diff-btn[data-diff="medium"] { border-left-color: var(--close); }
-  .startup-diff-btn[data-diff="hard"]   { border-left-color: var(--accent); }
+  .startup-diff-btn[data-diff="easy"],
+  .startup-diff-btn[data-today-diff="easy"],
+  .startup-diff-btn[data-archive-diff="easy"]   { border-left-color: var(--correct); }
+
+  .startup-diff-btn[data-diff="medium"],
+  .startup-diff-btn[data-today-diff="medium"],
+  .startup-diff-btn[data-archive-diff="medium"] { border-left-color: var(--close); }
+
+  .startup-diff-btn[data-diff="hard"],
+  .startup-diff-btn[data-today-diff="hard"],
+  .startup-diff-btn[data-archive-diff="hard"]   { border-left-color: var(--accent); }
 
   .startup-diff-btn:hover {
     background: var(--ink);
@@ -1493,11 +2423,23 @@
 
   /* Small phone (≤480px) — BASE */
   .app { padding: 14px 14px 24px; max-width: 100%; }
-  .nav { margin-bottom: 14px; padding-bottom: 10px; }
+  .nav { margin-bottom: 18px; padding-bottom: 10px; }
   .wordmark { font-size: 18px; }
-  .nav-link { padding: 5px 8px; font-size: 10px; letter-spacing: 0.06em; }
+  .nav-link { padding: 11px 8px; font-size: 10px; letter-spacing: 0.06em; }
+  .streak-chip { font-size: 12px; }
+  .home { gap: 24px; }
+  .home-tagline-headline { font-size: 22px; }
+  .today-card { padding: 16px; }
+  .today-card.unplayed { box-shadow: 5px 5px 0 var(--ink); }
+  .today-card-title { font-size: 20px; }
+  .today-played-score .num { font-size: 48px; }
+  .today-played-score .of { font-size: 19px; }
+  .explore-row-label { font-size: 15px; }
   .section-head { font-size: 10px; margin-bottom: 10px; }
   .chain-row { height: 44px; padding: 0 12px; gap: 10px; }
+  .ach-tile { min-height: 120px; padding: 12px; }
+  .ach-tile-glyph { font-size: 24px; }
+  .ach-tile-title { font-size: 13px; }
   .chain-word { font-size: 16px; }
   .chain-num { font-size: 10px; width: 16px; }
   .btn { font-size: 10px; padding: 8px 14px; letter-spacing: 0.06em; }
@@ -1613,17 +2555,92 @@
 <script defer src="https://cloud.umami.is/script.js" data-website-id="cec9cd34-0d6f-4615-855b-58a0733cf115"></script>
 </head>
 <body>
-<div class="app locked" id="appRoot">
+<div class="app" id="appRoot">
   <header class="nav">
-    <div class="wordmark">LIN<span class="accent">K</span>D</div>
+    <button class="wordmark" id="navHome" aria-label="Home">LIN<span class="accent">K</span>D</button>
+    <span class="streak-chip hidden" id="navStreak" aria-label="Current streak">
+      <!-- Custom flame SVG — geometric teardrop with pointed top.
+           Inherits accent via currentColor so it themes from CSS. -->
+      <svg class="flame" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">
+        <path d="M7 0 Q14 4.8 14 10.4 Q14 16 7 16 Q0 16 0 10.4 Q0 7.6 4.9 5.6 Q3.85 8.4 5.6 9.6 Q4.2 6 7 0 Z"/>
+      </svg>
+      <span id="navStreakNum">0</span>
+    </span>
     <nav class="nav-actions">
-      <button class="nav-link" id="navStats">Stats</button>
-      <button class="nav-link" id="navFriends">Friends</button>
       <button class="nav-link" id="navHelp">How</button>
+      <button class="nav-link" id="navMore">More</button>
     </nav>
   </header>
 
-  <main id="gameView">
+  <!-- Home: entry state on every fresh visit. -->
+  <main id="homeView" class="home">
+    <section class="home-tagline">
+      <div class="home-tagline-eyebrow">▸ A daily word game</div>
+      <h1 class="home-tagline-headline">Build the <span class="accent">chain.</span></h1>
+    </section>
+
+    <section class="home-today">
+      <div class="home-today-head">
+        <div class="home-section-eyebrow">Today</div>
+        <div class="home-today-head-meta" id="homeTodayMeta">№ —</div>
+      </div>
+      <button class="today-card" id="homeTodayCard" type="button"></button>
+    </section>
+
+    <section class="home-explore">
+      <div class="home-section-eyebrow">Explore</div>
+      <div class="explore-list">
+        <button class="explore-row" data-explore="archive" type="button">
+          <div class="explore-row-body">
+            <div class="explore-row-label">Archive</div>
+            <div class="explore-row-caption">Past puzzles</div>
+          </div>
+          <span class="explore-row-chevron">›</span>
+        </button>
+        <button class="explore-row" data-explore="achievements" type="button">
+          <div class="explore-row-body">
+            <div class="explore-row-label">Achievements</div>
+            <div class="explore-row-caption" id="achievementsCaption">Track progress · 0/13</div>
+          </div>
+          <span class="explore-row-chevron">›</span>
+        </button>
+        <button class="explore-row" data-explore="stats" type="button">
+          <div class="explore-row-body">
+            <div class="explore-row-label">Stats</div>
+            <div class="explore-row-caption">Your history</div>
+          </div>
+          <span class="explore-row-chevron">›</span>
+        </button>
+        <button class="explore-row" data-explore="friends" type="button">
+          <div class="explore-row-body">
+            <div class="explore-row-label">Friends</div>
+            <div class="explore-row-caption">Compare scores</div>
+          </div>
+          <span class="explore-row-chevron">›</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Subtle "certified" footer badge — kept on home only. -->
+    <footer class="site-foot">
+      <a
+        class="cert-badge"
+        href="https://puzzled.online/?ref=cert-badge&amp;site=https%3A%2F%2Flinkddaily.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Certified Independent Puzzler"
+        data-umami-event="cert-badge-click"
+      >
+        <img
+          src="https://puzzled.online/badges/certified-slim-anim-light.svg"
+          alt="Certified Independent Puzzler"
+          loading="lazy"
+        />
+      </a>
+    </footer>
+  </main>
+
+  <main id="gameView" style="display:none;">
     <!-- One tight status strip replaces section-head + headline + status-bar -->
     <div class="game-top">
       <div class="game-top-left">
@@ -1700,11 +2717,19 @@
   </main>
 
   <main id="resultView" style="display: none;">
-    <div class="section-head">
-      <span class="head-meta" id="puzzleNumResult">—</span>
-      <span class="head-difficulty" id="headDifficultyResult" data-mode="easy">
-        <span class="dot"></span><span id="headDifficultyResultLabel">Easy</span>
-      </span>
+    <!-- Header: back-arrow + puzzle № + (archive tag) + difficulty pill. -->
+    <div class="result-header">
+      <button class="result-back" id="resultBack" type="button">
+        <span>←</span><span>Home</span>
+      </button>
+      <div class="result-header-right">
+        <span class="head-meta" id="puzzleNumResult">—</span>
+        <span class="result-archive-tag" id="resultArchiveTag" style="display:none;">· Archive</span>
+        <span class="sep">·</span>
+        <span class="head-difficulty" id="headDifficultyResult" data-mode="easy">
+          <span class="dot"></span><span id="headDifficultyResultLabel">Easy</span>
+        </span>
+      </div>
     </div>
 
     <div class="result">
@@ -1713,116 +2738,95 @@
         <span class="result-mode-tag" id="resultModeTag">—</span>
       </div>
       <div class="result-score"><span id="resultScore">0</span><span class="of" id="resultScoreOf">/0</span></div>
-      <div class="result-blurb" id="resultBlurb">—</div>
-      <div class="result-meta-line" id="resultMetaLine"></div>
-      <div class="result-emojis" id="resultEmojis"></div>
-      <div class="result-actions">
-        <button class="btn btn-primary" id="shareBtn">Share Result</button>
-        <button class="btn" id="compareBtn">Compare</button>
-        <button class="btn" id="replayBtn">Play Again</button>
-      </div>
-    </div>
+      <div class="result-meta" id="resultMetaLine"></div>
 
-    <section class="reveal-section">
+      <!-- Achievement banner is injected before swatches when applicable. -->
+      <div id="unlockBannerSlot"></div>
+
+      <!-- Chain swatches replace OS color emoji. -->
+      <div class="result-swatches" id="resultSwatches"></div>
+
+      <div class="result-actions">
+        <button class="result-primary" id="shareBtn">
+          <span>Share Result</span><span>→</span>
+        </button>
+        <div class="result-secondaries">
+          <button class="result-secondary" id="compareBtn">Compare</button>
+          <div class="result-secondary-divider"></div>
+          <button class="result-secondary" id="replayBtn">Replay</button>
+        </div>
+      </div>
+
+      <div class="reveal-divider"></div>
+
       <div class="reveal-label">▸ The Full Chain</div>
       <div class="reveal-chain" id="revealChain"></div>
-    </section>
 
-    <!-- Subtle App Store nudge at the very end of the result view.
-         No popup, no auto-trigger — just a card you scroll past. -->
-    <section class="app-promo">
-      <div class="app-promo-eyebrow">▸ Never miss a daily chain</div>
-      <a
-        class="app-promo-card"
-        href="https://apps.apple.com/us/app/linkd-daily-word-chain/id6765814020"
-        target="_blank"
-        rel="noopener noreferrer"
-        data-umami-event="app-store-click"
-        data-umami-event-source="result"
-      >
-        <div class="app-promo-text">
-          <div class="app-promo-title">Get the iPhone app</div>
-          <div class="app-promo-sub">Daily reminders · offline play</div>
-        </div>
-        <span class="app-promo-cta">App&nbsp;Store <span class="arrow">→</span></span>
-      </a>
-    </section>
+      <!-- Theme reveal — only shown on wins for curated chains. -->
+      <div class="theme-reveal" id="themeReveal" style="display:none;">
+        <div class="theme-reveal-eyebrow">Today's theme</div>
+        <div class="theme-reveal-name" id="themeRevealName"></div>
+      </div>
+    </div>
   </main>
-
-  <!-- Subtle "certified" footer badge -->
-  <footer class="site-foot">
-    <a
-      class="cert-badge"
-      href="https://puzzled.online/?ref=cert-badge&amp;site=https%3A%2F%2Flinkddaily.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Certified Independent Puzzler"
-      data-umami-event="cert-badge-click"
-    >
-      <img
-        src="https://puzzled.online/badges/certified-slim-anim-light.svg"
-        alt="Certified Independent Puzzler"
-        loading="lazy"
-      />
-    </a>
-  </footer>
 </div>
 
 <!-- Help -->
 <div class="modal-bg" id="helpModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('helpModal')">×</button>
-    <div class="modal-eyebrow">▸ How to Play</div>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('helpModal')"></button>
+    <div class="modal-eyebrow">How to Play</div>
     <h2>Build the <span class="accent">chain.</span></h2>
-    <p>Each puzzle is a chain of 6–10 words. Adjacent words always form a real compound word or common phrase.</p>
 
-    <div class="example">BLACK <span class="arrow">→</span> <span class="blank">O___</span></div>
-    <p style="margin-top: -4px;">First word given, plus a hint for the next. Guess it correctly and the chain continues:</p>
+    <!-- Lede: one sentence intro, then the example does the explaining. -->
+    <p>Six to ten words. Each pair forms a real compound or common phrase.</p>
+
     <div class="example">BLACK <span class="arrow">→</span> OUT <span class="arrow">→</span> <span class="blank">B___</span></div>
-    <p>BLACKOUT and OUTBACK — both real phrases.</p>
+    <p>BLACKOUT, OUTBACK — both real.</p>
 
     <h3>Typing</h3>
-    <p>Shown letters are free — you can <strong>type only the missing letters, or the full word</strong>. For <em>WH___</em> (target WHITE), all of <em>WHITE</em>, <em>HITE</em>, and <em>ITE</em> are accepted.</p>
+    <p>Type only the missing letters, or the full word. For <strong>WH___</strong> all of WHITE, HITE, ITE are accepted.</p>
 
     <h3>Strikes</h3>
-    <p>You get <strong>4 wrong guesses</strong> total before the puzzle ends. Same chain for everyone.</p>
-    <p>If you type something that <strong>isn't a real English word</strong>, it doesn't cost a strike — just try again.</p>
+    <p>Four wrong guesses ends the puzzle. Non-words don't cost a strike.</p>
 
     <h3>Hints</h3>
-    <p>Stuck? Hit the <strong>▸ Hint</strong> button under the chain to reveal one more letter — no strike. Limited per puzzle:</p>
-    <p><strong>Easy:</strong> 3 hints · <strong>Medium:</strong> 2 hints · <strong>Hard:</strong> 1 hint.</p>
+    <p>Reveal a letter — no strike. <strong>Easy</strong> 3 · <strong>Medium</strong> 2 · <strong>Hard</strong> 1.</p>
 
     <h3>Difficulty</h3>
-    <p><strong>Easy:</strong> First two letters + word length. Strikes and hints reveal more.</p>
-    <p><strong>Medium:</strong> First letter + word length. Strikes and hints reveal more.</p>
-    <p><strong>Hard:</strong> First letter only — no length shown.</p>
-    <p>Your chosen difficulty is part of your share string — friends will know if you took the harder path.</p>
+    <div class="spec-row">
+      <div class="spec-row-label">Easy</div>
+      <div class="spec-row-detail">First two letters + length</div>
+    </div>
+    <div class="spec-row">
+      <div class="spec-row-label">Medium</div>
+      <div class="spec-row-detail">First letter + length</div>
+    </div>
+    <div class="spec-row">
+      <div class="spec-row-label">Hard</div>
+      <div class="spec-row-detail">First letter only</div>
+    </div>
 
-    <h3>Compare with Friends</h3>
-    <p>Share your result. Friends do the same. Paste theirs into your Friends page to see leaderboards by mode and overall.</p>
-
-    <h3>Daily reminders</h3>
-    <p>Want a nudge each day plus offline play? <a class="modal-link" href="https://apps.apple.com/us/app/linkd-daily-word-chain/id6765814020" target="_blank" rel="noopener noreferrer" data-umami-event="app-store-click" data-umami-event-source="help">Linkd is on the App Store<span class="ext">↗</span></a></p>
+    <h3>Friends</h3>
+    <p>Share your result. Paste a friend's to see the leaderboard.</p>
   </div>
 </div>
 
 <!-- Stats -->
 <div class="modal-bg" id="statsModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('statsModal')">×</button>
-    <div class="modal-eyebrow">▸ Your Record</div>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('statsModal')"></button>
+    <div class="modal-eyebrow">Your Record</div>
     <h2>Stats</h2>
-    <div class="stats-grid" id="statsGrid"></div>
-    <h3>Recent Puzzles</h3>
-    <div id="recentList"></div>
+    <div id="statsBody"></div>
   </div>
 </div>
 
 <!-- Friends -->
 <div class="modal-bg" id="friendsModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('friendsModal')">×</button>
-    <div class="modal-eyebrow">▸ Compare</div>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('friendsModal')"></button>
+    <div class="modal-eyebrow">Compare</div>
     <h2>Friends</h2>
     <p>Paste a friend's share string to add their result.</p>
 
@@ -1844,33 +2848,109 @@
   </div>
 </div>
 
-<div class="toast" id="toast">Copied</div>
+<!-- Achievements -->
+<div class="modal-bg" id="achievementsModal">
+  <div class="modal">
+    <button class="modal-close" aria-label="Close" onclick="closeModal('achievementsModal')"></button>
+    <div class="modal-eyebrow">Recognitions</div>
+    <h2>Achievements</h2>
+    <div class="ach-progress" id="achProgress">
+      <span class="num" id="achProgressEarned">0</span>
+      <span class="lbl">of</span>
+      <span class="num" id="achProgressTotal">13</span>
+      <span class="lbl">unlocked</span>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </div>
+</div>
 
-<!-- Startup gate: difficulty selection before puzzle is revealed -->
-<div class="startup-modal-bg" id="startupGate">
-  <div class="startup-modal">
-    <div class="startup-eyebrow">▸ A daily word chain</div>
-    <h1 class="startup-title">Lin<span class="accent">k</span>d</h1>
-    <p class="startup-tag">Build the chain — each word links to the next.</p>
+<!-- Archive -->
+<div class="modal-bg" id="archiveModal">
+  <div class="modal">
+    <button class="modal-close" aria-label="Close" onclick="closeModal('archiveModal')"></button>
+    <div class="modal-eyebrow">Archive</div>
+    <h2>Past chains</h2>
+    <p class="archive-intro">Replay any past day. Archive plays count toward Achievements but not your streak.</p>
+    <div class="archive-list" id="archiveList"></div>
+  </div>
+</div>
 
-    <div class="startup-difficulty">
-      <button class="startup-diff-btn" data-diff="easy">
+<!-- Archive difficulty picker -->
+<div class="modal-bg" id="archiveDiffModal">
+  <div class="modal">
+    <button class="modal-close" aria-label="Close" onclick="closeModal('archiveDiffModal')"></button>
+    <div class="modal-eyebrow">Replay</div>
+    <h2 id="archiveDiffTitle">№ —</h2>
+    <p>Pick a difficulty.</p>
+    <div class="startup-difficulty" style="margin-top: 14px;">
+      <button class="startup-diff-btn" data-archive-diff="easy">
         <span class="name">Easy</span>
         <span class="desc">First two letters + length · 3 hints</span>
       </button>
-      <button class="startup-diff-btn" data-diff="medium">
+      <button class="startup-diff-btn" data-archive-diff="medium">
         <span class="name">Medium</span>
         <span class="desc">First letter + length · 2 hints</span>
       </button>
-      <button class="startup-diff-btn" data-diff="hard">
+      <button class="startup-diff-btn" data-archive-diff="hard">
         <span class="name">Hard</span>
         <span class="desc">First letter only · 1 hint</span>
       </button>
     </div>
-
-    <div class="startup-foot" id="startupFoot">№ 1 · 4 strikes · typos don't count</div>
   </div>
 </div>
+
+<!-- More: settings, streak freezes, app store link -->
+<div class="modal-bg" id="moreModal">
+  <div class="modal">
+    <button class="modal-close" aria-label="Close" onclick="closeModal('moreModal')"></button>
+    <div class="modal-eyebrow">Settings</div>
+    <h2>More</h2>
+
+    <h3>Streak freezes</h3>
+    <p>Miss a day? A freeze auto-fills it so your streak survives. You get one a month, banked up to two.</p>
+    <div class="settings-row">
+      <div class="settings-row-text">
+        <div class="settings-row-label">Banked</div>
+        <div class="settings-row-caption" id="freezeCaption">Refills monthly · cap 2</div>
+      </div>
+      <div class="freeze-count">
+        <svg class="flame" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">
+          <path d="M7 0 Q14 4.8 14 10.4 Q14 16 7 16 Q0 16 0 10.4 Q0 7.6 4.9 5.6 Q3.85 8.4 5.6 9.6 Q4.2 6 7 0 Z"/>
+        </svg>
+        <span id="freezeCount">0</span>
+      </div>
+    </div>
+
+    <h3>Daily reminders</h3>
+    <p>Prefer iOS? <a class="help-store-link" href="https://apps.apple.com/us/app/linkd-daily-word-chain/id6765814020" target="_blank" rel="noopener noreferrer" data-umami-event="app-store-click" data-umami-event-source="more">Linkd is on the App Store<span class="ext">↗</span></a></p>
+  </div>
+</div>
+
+<!-- Difficulty picker for today's puzzle -->
+<div class="modal-bg" id="diffPickModal">
+  <div class="modal">
+    <button class="modal-close" aria-label="Close" onclick="closeModal('diffPickModal')"></button>
+    <div class="modal-eyebrow">Today</div>
+    <h2 id="diffPickTitle">Pick a difficulty</h2>
+    <p id="diffPickSub">№ —</p>
+    <div class="startup-difficulty" style="margin-top: 14px;">
+      <button class="startup-diff-btn" data-today-diff="easy">
+        <span class="name">Easy</span>
+        <span class="desc">First two letters + length · 3 hints</span>
+      </button>
+      <button class="startup-diff-btn" data-today-diff="medium">
+        <span class="name">Medium</span>
+        <span class="desc">First letter + length · 2 hints</span>
+      </button>
+      <button class="startup-diff-btn" data-today-diff="hard">
+        <span class="name">Hard</span>
+        <span class="desc">First letter only · 1 hint</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied</div>
 
 <script>
 'use strict';
@@ -2111,20 +3191,89 @@ const PUZZLES = [
   ["STAR", "BOARD", "WALK", "OUT", "BACK", "DROP"],
 ];
 
-function getTodaysPuzzle() {
-  // Defensive: filter out any chain that has duplicate words (those break the game).
-  const valid = PUZZLES.filter(chain => new Set(chain).size === chain.length);
+// ─── Themes ─────────────────────────────────────────────────────
+//
+// Ported verbatim from the iOS app's Puzzles.swift. Keyed by index
+// into the filtered `validPuzzles` array (NOT raw PUZZLES) so themes
+// ride along with the same chain through the 225-day rotation.
+// Quality > frequency — 10 hand-picked themes, players see one
+// every ~3 weeks of play, which is rare enough to feel earned.
+const THEMES = {
+  5:   "AROUND THE YARD",
+  22:  "WEEKEND PLANS",
+  79:  "FALLING DOWN",
+  80:  "AT THE OFFICE",
+  93:  "BRINGING THE HEAT",
+  99:  "BURNOUT",
+  137: "COMMANDER IN CHIEF",
+  149: "GARDEN PARTY",
+  159: "POWER UP",
+  219: "MOON WALK",
+};
+
+// Self-test: pins each themed chain by its expected first word.
+// Mirrors the iOS LinkdTests.themesIndexIsStable test. If the
+// PUZZLES array ever drifts (insertion / removal that shifts
+// indices), this fails loudly in the console rather than
+// silently mis-attributing a theme to the wrong chain.
+const THEME_FIRST_WORDS = {
+  5:   "HORSE",
+  22:  "DAY",
+  79:  "FALL",
+  80:  "WORK",
+  93:  "SHOT",
+  99:  "HOME",
+  137: "WHITE",
+  149: "STONE",
+  159: "POWER",
+  219: "MOON",
+};
+
+const validPuzzles = PUZZLES.filter(chain => new Set(chain).size === chain.length);
+
+(function themesSelfTest() {
+  let drift = false;
+  for (const [idxStr, expectedFirst] of Object.entries(THEME_FIRST_WORDS)) {
+    const idx = parseInt(idxStr, 10);
+    const chain = validPuzzles[idx];
+    if (!chain || chain[0] !== expectedFirst) {
+      drift = true;
+      console.error(`[Linkd] Theme drift at idx ${idx}: expected ${expectedFirst}, got ${chain ? chain[0] : 'undefined'}`);
+    }
+  }
+  if (drift) console.error('[Linkd] Themes dict is out of sync with PUZZLES order — update THEMES or restore PUZZLES.');
+})();
+
+function themeFor(displayDayNum) {
+  const raw = displayDayNum - 1;
+  const count = validPuzzles.length;
+  const idx = ((raw % count) + count) % count;
+  return THEMES[idx] || null;
+}
+
+function todayDisplayDayNum(now = new Date()) {
   const epoch = new Date(2026, 0, 1).getTime();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dayNum = Math.floor((today.getTime() - epoch) / 86400000);
-  const idx = ((dayNum % valid.length) + valid.length) % valid.length;
-  return { chain: valid[idx], dayNum: dayNum + 1 };
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  return Math.floor((startOfToday.getTime() - epoch) / 86400000) + 1;
+}
+
+function chainForDay(displayDayNum) {
+  const raw = displayDayNum - 1;
+  const count = validPuzzles.length;
+  const idx = ((raw % count) + count) % count;
+  return validPuzzles[idx];
+}
+
+function getTodaysPuzzle() {
+  const dayNum = todayDisplayDayNum();
+  return { chain: chainForDay(dayNum), dayNum };
 }
 
 // ─── State ───
-const currentPuzzle = getTodaysPuzzle();
-const TOTAL_LINKS = currentPuzzle.chain.length;
+let currentPuzzle = getTodaysPuzzle();
+let TOTAL_LINKS = currentPuzzle.chain.length;
+const TODAY_DAY_NUM = currentPuzzle.dayNum;
 const MAX_STRIKES = 4;
 
 // Hint allowance per difficulty — escape valve when stuck, doesn't cost a strike.
@@ -2141,12 +3290,34 @@ let state = {
   currentGuess: '', // what user is typing right now
   hintsUsed: 0,
   hintsAllowed: 3,
+  isArchive: false,
+  archiveDayNum: null,
 };
 
-// ─── Storage ───
+/// In-memory copy of just-finalized result. Used for archive
+/// replays of already-naturally-played days, where we skip
+/// persistence to preserve the original record but still show
+/// the session result in the result view.
+let lastInMemoryResult = null;
+
+// ─── Storage ─────────────────────────────────────────────
+// Existing keys preserved so no migration is needed:
+//   linkd-results, linkd-friends, linkd-prefs, linkd-helped
+// New keys added for v2.4 parity:
+//   linkd-achievements   — Set<string> earned achievement IDs
+//   linkd-freeze-available     — number of banked freezes (0-2)
+//   linkd-freeze-month-key     — last YYYYMM key for monthly refresh
+//   linkd-frozen-days          — Array<number> dayNums consumed by freezes
+//   linkd-freeze-initialized   — bool, set after bootstrap
 const STORE_RESULTS = 'linkd-results';
 const STORE_FRIENDS = 'linkd-friends';
 const STORE_PREFS = 'linkd-prefs';
+const STORE_ACHIEVEMENTS = 'linkd-achievements';
+const STORE_FREEZE_AVAIL = 'linkd-freeze-available';
+const STORE_FREEZE_MONTH = 'linkd-freeze-month-key';
+const STORE_FROZEN_DAYS = 'linkd-frozen-days';
+const STORE_FREEZE_INIT = 'linkd-freeze-initialized';
+
 const loadResults = () => { try { return JSON.parse(localStorage.getItem(STORE_RESULTS) || '{}'); } catch { return {}; } };
 const saveResults = r => localStorage.setItem(STORE_RESULTS, JSON.stringify(r));
 const loadFriends = () => { try { return JSON.parse(localStorage.getItem(STORE_FRIENDS) || '{}'); } catch { return {}; } };
@@ -2156,7 +3327,239 @@ const savePrefs = p => localStorage.setItem(STORE_PREFS, JSON.stringify(p));
 
 const $ = id => document.getElementById(id);
 
-// ─── Init ───
+// ─── Shared meta formatter ─────────────────────────────────────
+// Single source of truth for the strike/hint metadata shown
+// across Home, Stats, Friends, and Result. Sentence case mono.
+// Examples:
+//   "1 strike"           (hints == 0)
+//   "1 strike · 2 hints"
+//   "0 strikes · 1 hint"
+function gameMeta(strikes, hints) {
+  const strikeWord = `${strikes} strike${strikes === 1 ? '' : 's'}`;
+  if (!hints || hints <= 0) return strikeWord;
+  return `${strikeWord} · ${hints} hint${hints === 1 ? '' : 's'}`;
+}
+
+// ─── Achievements ──────────────────────────────────────────────
+// 13 achievements, ported verbatim from Achievements.swift.
+const ACHIEVEMENTS = [
+  { id: 'first_win',      glyph: '✓',  title: 'First Link',        blurb: 'Win your first puzzle' },
+  { id: 'first_flawless', glyph: '★',  title: 'Flawless',          blurb: 'Win with zero strikes and zero hints' },
+  { id: 'comeback',       glyph: '↺',  title: 'Comeback',          blurb: 'Win after taking 3 strikes' },
+  { id: 'purist',         glyph: '◇',  title: 'Purist',            blurb: 'Win 5 puzzles without using a single hint' },
+  { id: 'hard_first',     glyph: '▲',  title: 'Up a Level',        blurb: 'Win one on Hard' },
+  { id: 'hard_veteran',   glyph: '▣',  title: 'Hard Mode Veteran', blurb: 'Win 5 on Hard' },
+  { id: 'streak_3',       glyph: '③',  title: 'Hat Trick',         blurb: '3-day streak' },
+  { id: 'streak_7',       glyph: '⑦',  title: 'Week One',          blurb: '7-day streak' },
+  { id: 'streak_30',      glyph: '㉚', title: 'Iron Will',         blurb: '30-day streak' },
+  { id: 'played_25',      glyph: '◓',  title: 'Quarter Century',   blurb: 'Play 25 puzzles' },
+  { id: 'played_100',     glyph: '●',  title: 'Centurion',         blurb: 'Play 100 puzzles' },
+  { id: 'archivist',      glyph: '✥',  title: 'Archivist',         blurb: 'Play a puzzle from the archive' },
+  { id: 'all_modes',      glyph: '◈',  title: 'Triple Threat',     blurb: 'Win on all three difficulty modes' },
+];
+
+const achievementById = Object.fromEntries(ACHIEVEMENTS.map(a => [a.id, a]));
+
+function loadEarnedAchievements() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORE_ACHIEVEMENTS) || '[]');
+    return new Set(Array.isArray(raw) ? raw : []);
+  } catch { return new Set(); }
+}
+
+function saveEarnedAchievements(set) {
+  localStorage.setItem(STORE_ACHIEVEMENTS, JSON.stringify([...set]));
+}
+
+// Evaluates achievements against the full results history. Idempotent.
+function evaluateAchievements(results, todayDay) {
+  const all = Object.values(results);
+  const nonArchive = all.filter(r => !r.isArchive);
+  const archived   = all.filter(r =>  r.isArchive);
+  const wins       = nonArchive.filter(r => !r.failed);
+
+  const earned = new Set();
+
+  if (wins.length) earned.add('first_win');
+  if (wins.some(r => r.strikes === 0 && (r.hintsUsed || 0) === 0)) earned.add('first_flawless');
+  if (wins.some(r => r.strikes === 3)) earned.add('comeback');
+  if (wins.filter(r => (r.hintsUsed || 0) === 0).length >= 5) earned.add('purist');
+
+  const hardWins = wins.filter(r => r.difficulty === 'hard');
+  if (hardWins.length >= 1) earned.add('hard_first');
+  if (hardWins.length >= 5) earned.add('hard_veteran');
+
+  const cur = currentStreak(results, todayDay);
+  const lng = Math.max(cur, longestStreak(results));
+  if (lng >= 3)  earned.add('streak_3');
+  if (lng >= 7)  earned.add('streak_7');
+  if (lng >= 30) earned.add('streak_30');
+
+  const played = nonArchive.length + archived.length;
+  if (played >= 25)  earned.add('played_25');
+  if (played >= 100) earned.add('played_100');
+
+  if (archived.length) earned.add('archivist');
+
+  const modes = new Set(wins.map(r => r.difficulty));
+  if (modes.size === 3) earned.add('all_modes');
+
+  return earned;
+}
+
+// Re-evaluates and persists. Returns the array of newly-earned
+// Achievement records (for one-shot unlock banner on result page).
+function refreshAchievements(results, todayDay) {
+  const earned = evaluateAchievements(results, todayDay);
+  const previous = loadEarnedAchievements();
+  const newIds = [...earned].filter(id => !previous.has(id));
+  saveEarnedAchievements(earned);
+  return newIds.map(id => achievementById[id]).filter(Boolean);
+}
+
+// ─── Streak math ───────────────────────────────────────────────
+// A "played" day = submitted && !isArchive. Frozen days count as
+// played. Today doesn't need to be played for the streak to be
+// alive (you have until end of day), so if today is unplayed we
+// start counting from yesterday.
+function isPlayedOrFrozen(results, frozen, day) {
+  if (frozen.has(day)) return true;
+  const r = results[`p${day}`];
+  return !!(r && r.submitted && !r.isArchive);
+}
+
+function currentStreak(results, todayDay) {
+  const frozen = loadFrozenDays();
+  let check = todayDay;
+  if (!isPlayedOrFrozen(results, frozen, check)) check -= 1;
+  let count = 0;
+  while (isPlayedOrFrozen(results, frozen, check)) {
+    count += 1;
+    check -= 1;
+  }
+  return count;
+}
+
+function longestStreak(results) {
+  const frozen = loadFrozenDays();
+  const days = new Set();
+  for (const r of Object.values(results)) {
+    if (r.submitted && !r.isArchive) days.add(r.dayNum);
+  }
+  for (const d of frozen) days.add(d);
+  const sorted = [...days].sort((a, b) => a - b);
+  if (!sorted.length) return 0;
+  let best = 1, run = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === sorted[i - 1] + 1) {
+      run += 1;
+      best = Math.max(best, run);
+    } else if (sorted[i] !== sorted[i - 1]) {
+      run = 1;
+    }
+  }
+  return best;
+}
+
+// ─── Streak freeze lifecycle ───────────────────────────────────
+// Duolingo-style. Bootstrap grants 1 freeze. Refresh adds one per
+// calendar month, capped at 2. Auto-consume on launch + after
+// finalize, walking last 7 days for a missed day with played-or-
+// frozen days on both sides.
+const FREEZE_CAP = 2;
+
+function loadFrozenDays() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORE_FROZEN_DAYS) || '[]');
+    return new Set(Array.isArray(raw) ? raw : []);
+  } catch { return new Set(); }
+}
+function saveFrozenDays(set) {
+  localStorage.setItem(STORE_FROZEN_DAYS, JSON.stringify([...set]));
+}
+function freezeAvailable() {
+  return parseInt(localStorage.getItem(STORE_FREEZE_AVAIL) || '0', 10) || 0;
+}
+function setFreezeAvailable(n) {
+  const clamped = Math.max(0, Math.min(FREEZE_CAP, n));
+  localStorage.setItem(STORE_FREEZE_AVAIL, String(clamped));
+}
+function lastMonthKey() {
+  return parseInt(localStorage.getItem(STORE_FREEZE_MONTH) || '0', 10) || 0;
+}
+function setLastMonthKey(key) {
+  localStorage.setItem(STORE_FREEZE_MONTH, String(key));
+}
+function monthKeyFor(date) {
+  return date.getFullYear() * 100 + (date.getMonth() + 1);
+}
+
+function bootstrapFreezesIfNeeded() {
+  if (localStorage.getItem(STORE_FREEZE_INIT) === '1') return;
+  localStorage.setItem(STORE_FREEZE_INIT, '1');
+  setFreezeAvailable(1);
+  setLastMonthKey(monthKeyFor(new Date()));
+}
+
+function refreshMonthlyFreezeAllowance() {
+  const current = monthKeyFor(new Date());
+  if (current > lastMonthKey()) {
+    setFreezeAvailable(freezeAvailable() + 1);  // setter caps at 2
+    setLastMonthKey(current);
+  }
+}
+
+// Consume freezes for any 1-day gap in the recent past that has a
+// played-or-frozen day on both sides. Returns count consumed so
+// callers can show a "Streak saved" toast. Walks the last 7 days
+// — past that, the streak has already broken.
+function consumeFreezesIfNeeded(results, todayDay) {
+  let frozen = loadFrozenDays();
+  let avail = freezeAvailable();
+  let used = 0;
+  const start = Math.max(1, todayDay - 7);
+  for (let day = start; day <= todayDay; day++) {
+    const played = isPlayedOrFrozenRaw(results, day);
+    const isFrozen = frozen.has(day);
+    if (played || isFrozen) continue;
+
+    const before = isPlayedOrFrozenRaw(results, day - 1) || frozen.has(day - 1);
+    const after = day + 1 <= todayDay && (
+      isPlayedOrFrozenRaw(results, day + 1) || frozen.has(day + 1)
+    );
+
+    if (before && after && avail > 0) {
+      frozen.add(day);
+      avail -= 1;
+      used += 1;
+    }
+  }
+  if (used > 0) {
+    saveFrozenDays(frozen);
+    setFreezeAvailable(avail);
+  }
+  return used;
+}
+
+function isPlayedOrFrozenRaw(results, day) {
+  const r = results[`p${day}`];
+  return !!(r && r.submitted && !r.isArchive);
+}
+
+// ─── Screens ──────────────────────────────────────────────────
+// Three top-level screens: home, playing, result. All sheets layer
+// on top of any of these. Home is the entry state on every visit.
+const Screen = { Home: 'home', Playing: 'playing', Result: 'result' };
+let currentScreen = Screen.Home;
+
+function showScreen(name) {
+  currentScreen = name;
+  $('homeView').style.display = name === Screen.Home ? '' : 'none';
+  $('gameView').style.display = name === Screen.Playing ? '' : 'none';
+  $('resultView').style.display = name === Screen.Result ? 'block' : 'none';
+}
+
+// ─── Init ─────────────────────────────────────────────────────
 function init() {
   if (window.location.search.includes('reset')) {
     const r = loadResults();
@@ -2165,64 +3568,207 @@ function init() {
     history.replaceState({}, '', window.location.pathname);
   }
 
-  $('puzzleNum').textContent = `№ ${currentPuzzle.dayNum}`;
-  $('puzzleNumResult').textContent = `№ ${currentPuzzle.dayNum}`;
-  $('startupFoot').textContent = `№ ${currentPuzzle.dayNum} · 4 strikes · typos don't count`;
+  // Streak freeze lifecycle: bootstrap on first run, refresh
+  // monthly allowance, auto-consume any freezes that bridge a
+  // missed day since last launch.
+  bootstrapFreezesIfNeeded();
+  refreshMonthlyFreezeAllowance();
+  const usedFreezes = consumeFreezesIfNeeded(loadResults(), currentPuzzle.dayNum);
 
-  // Check if already played today — skip the gate, show result directly
-  const results = loadResults();
-  const todayKey = `p${currentPuzzle.dayNum}`;
-  if (results[todayKey]?.submitted) {
-    $('startupGate').style.display = 'none';
-    $('appRoot').classList.remove('locked');
-    $('gameView').style.display = 'none';
-    showResult(results[todayKey]);
-    return;
+  // Restore difficulty preference. Default to easy if unset.
+  const prefs = loadPrefs();
+  if (prefs.difficulty && HINTS_BY_DIFF[prefs.difficulty] != null) {
+    state.difficulty = prefs.difficulty;
+    state.hintsAllowed = HINTS_BY_DIFF[prefs.difficulty];
   }
 
-  // Build but keep blurred — wait for difficulty pick
-  buildChain();
+  $('puzzleNum').textContent = `№ ${currentPuzzle.dayNum}`;
+  $('puzzleNumResult').textContent = `№ ${currentPuzzle.dayNum}`;
 
-  // Wire up startup difficulty buttons
-  document.querySelectorAll('.startup-diff-btn').forEach(btn => {
+  // Always land on Home, even if today has already been played.
+  // The Today card will reflect the played state and let the user
+  // tap into the result view.
+  renderHome();
+  buildChain();
+  showScreen(Screen.Home);
+
+  // Help on first visit.
+  if (!localStorage.getItem('linkd-helped')) {
+    setTimeout(() => $('helpModal').classList.add('show'), 600);
+    localStorage.setItem('linkd-helped', '1');
+  }
+
+  // Wire today-difficulty picker.
+  document.querySelectorAll('[data-today-diff]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const diff = btn.dataset.diff;
-      setDifficulty(diff);
-      // Hide startup, unlock app
-      $('startupGate').style.opacity = '0';
-      $('startupGate').style.transition = 'opacity 0.25s ease';
-      setTimeout(() => {
-        $('startupGate').style.display = 'none';
-      }, 250);
-      $('appRoot').classList.remove('locked');
-      updateUI();
-      updateGuessDisplay();
+      const diff = btn.dataset.todayDiff;
+      closeModal('diffPickModal');
+      startTodayWithDifficulty(diff);
     });
   });
+
+  // Wire archive-difficulty picker.
+  document.querySelectorAll('[data-archive-diff]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const diff = btn.dataset.archiveDiff;
+      const day = parseInt($('archiveDiffModal').dataset.day, 10);
+      closeModal('archiveDiffModal');
+      startArchiveWithDifficulty(day, diff);
+    });
+  });
+
+  // Wire explore rows.
+  document.querySelectorAll('[data-explore]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const which = btn.dataset.explore;
+      if (which === 'archive')      { renderArchive();      $('archiveModal').classList.add('show'); }
+      if (which === 'achievements') { renderAchievements(); $('achievementsModal').classList.add('show'); }
+      if (which === 'stats')        { renderStats();        $('statsModal').classList.add('show'); }
+      if (which === 'friends')      { renderFriends();      $('friendsModal').classList.add('show'); }
+    });
+  });
+
+  // Wire today card.
+  $('homeTodayCard').addEventListener('click', () => {
+    const todayResult = loadResults()[`p${TODAY_DAY_NUM}`];
+    if (todayResult?.submitted) {
+      showResultForToday(todayResult);
+    } else {
+      $('diffPickSub').textContent = `№ ${TODAY_DAY_NUM} · 4 strikes · typos don't count`;
+      $('diffPickModal').classList.add('show');
+    }
+  });
+
+  // Wire nav.
+  $('navHome').addEventListener('click', goHome);
+  $('navHelp').addEventListener('click', () => $('helpModal').classList.add('show'));
+  $('navMore').addEventListener('click', () => {
+    renderMore();
+    $('moreModal').classList.add('show');
+  });
+
+  // Wire result-view back-arrow.
+  $('resultBack').addEventListener('click', goHome);
+
+  if (usedFreezes > 0) {
+    setTimeout(() => showToast('Streak saved'), 800);
+  }
+}
+
+function renderHome() {
+  const results = loadResults();
+  const todayResult = results[`p${TODAY_DAY_NUM}`];
+  $('homeTodayMeta').textContent = `№ ${TODAY_DAY_NUM}`;
+
+  const card = $('homeTodayCard');
+  if (todayResult?.submitted) {
+    const tier = scoreTier(todayResult);
+    const solvedLinks = todayResult.failed ? todayResult.solved - 1 : todayResult.total - 1;
+    const totalLinks = todayResult.total - 1;
+    card.className = 'today-card played';
+    card.innerHTML = `
+      <div class="today-played-stack">
+        <span class="today-played-tier${todayResult.failed ? ' fail' : ''}">${escapeHtml(tier.label)}</span>
+        <div class="today-played-score">
+          <span class="num">${solvedLinks}</span><span class="of">/${totalLinks}</span>
+        </div>
+        <div class="today-played-meta">${escapeHtml(gameMeta(todayResult.strikes, todayResult.hintsUsed || 0))}</div>
+      </div>
+      <span class="today-played-arrow">→</span>
+    `;
+  } else {
+    const seed = chainForDay(TODAY_DAY_NUM)[0];
+    card.className = 'today-card unplayed';
+    card.innerHTML = `
+      <div class="today-card-text">
+        <div class="today-card-title">Today's chain</div>
+        <div class="today-card-preview">${escapeHtml(seed)} → …</div>
+      </div>
+      <span class="today-card-play"><span>Play</span><span>→</span></span>
+    `;
+  }
+
+  // Streak chip + achievements caption.
+  const streak = currentStreak(results, TODAY_DAY_NUM);
+  const chip = $('navStreak');
+  if (streak > 0) {
+    chip.classList.remove('hidden');
+    $('navStreakNum').textContent = String(streak);
+  } else {
+    chip.classList.add('hidden');
+  }
+
+  const earned = loadEarnedAchievements().size;
+  $('achievementsCaption').textContent = `Track progress · ${earned}/${ACHIEVEMENTS.length}`;
+}
+
+function goHome() {
+  state.isArchive = false;
+  state.archiveDayNum = null;
+  lastInMemoryResult = null;
+  // Restore today's puzzle if we were in archive mode.
+  if (currentPuzzle.dayNum !== TODAY_DAY_NUM) {
+    currentPuzzle = getTodaysPuzzle();
+    TOTAL_LINKS = currentPuzzle.chain.length;
+    buildChain();
+  }
+  renderHome();
+  showScreen(Screen.Home);
+}
+
+function startTodayWithDifficulty(diff) {
+  currentPuzzle = getTodaysPuzzle();
+  TOTAL_LINKS = currentPuzzle.chain.length;
+  state.isArchive = false;
+  state.archiveDayNum = null;
+  loadGame(diff);
+}
+
+function startArchiveWithDifficulty(dayNum, diff) {
+  currentPuzzle = { chain: chainForDay(dayNum), dayNum };
+  TOTAL_LINKS = currentPuzzle.chain.length;
+  state.isArchive = true;
+  state.archiveDayNum = dayNum;
+  loadGame(diff);
+}
+
+function loadGame(diff) {
+  state.solved = 1;
+  state.strikes = 0;
+  state.guesses = [];
+  state.done = false;
+  state.failed = false;
+  state.letterReveals = 0;
+  state.currentGuess = '';
+  state.hintsUsed = 0;
+
+  setDifficulty(diff);
+
+  $('puzzleNum').textContent = `№ ${currentPuzzle.dayNum}`;
+
+  buildChain();
+  updateUI();
+  updateGuessDisplay();
+  showScreen(Screen.Playing);
+}
+
+function showResultForToday(r) {
+  currentPuzzle = getTodaysPuzzle();
+  TOTAL_LINKS = currentPuzzle.chain.length;
+  state.isArchive = !!r.isArchive;
+  showResult(r);
 }
 
 function setDifficulty(diff) {
   state.difficulty = diff;
   state.hintsAllowed = HINTS_BY_DIFF[diff] ?? 2;
-  document.querySelectorAll('.difficulty-btn').forEach(b => {
-    b.dataset.active = b.dataset.diff === diff ? 'true' : 'false';
-  });
   $('headDifficulty').dataset.mode = diff;
   $('headDifficultyLabel').textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
 
   const prefs = loadPrefs();
   prefs.difficulty = diff;
   savePrefs(prefs);
-
-  updateUI();
 }
-
-document.querySelectorAll('.difficulty-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (state.solved > 1 || state.guesses.length > 0) return; // can't change mid-game
-    setDifficulty(btn.dataset.diff);
-  });
-});
 
 function buildChain() {
   const chainEl = $('chain');
@@ -2502,14 +4048,15 @@ document.querySelectorAll('.kb-key').forEach(btn => {
 // Wire up hint button
 $('hintBtn').addEventListener('click', useHint);
 
-// Wire up physical keyboard (desktop)
+// Wire up physical keyboard (desktop).
+// Only intercept while actively playing — Home & Result screens
+// don't need keystroke handling, and modal inputs (Friends) need
+// their own behavior.
 document.addEventListener('keydown', e => {
+  if (currentScreen !== Screen.Playing) return;
   if (state.done) return;
-  // Don't intercept if typing in a modal input
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
   if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
-  // Don't intercept if startup modal showing
-  if ($('appRoot').classList.contains('locked')) return;
 
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -2536,56 +4083,166 @@ function finalizePuzzle() {
     hintsUsed: state.hintsUsed,
     hintsAllowed: state.hintsAllowed,
     submitted: true,
+    isArchive: !!state.isArchive,
     date: new Date().toISOString(),
   };
 
-  const results = loadResults();
-  results[`p${currentPuzzle.dayNum}`] = result;
-  saveResults(results);
+  const all = loadResults();
+
+  // Don't let an archive replay overwrite an original natural play.
+  // The streak and stats should reflect the player's actual history,
+  // not their most recent practice run.
+  const existing = all[`p${currentPuzzle.dayNum}`];
+  const canPersist = !(state.isArchive && existing && !existing.isArchive);
+  if (canPersist) {
+    all[`p${currentPuzzle.dayNum}`] = result;
+    saveResults(all);
+  }
+  // Always remember the in-memory result so the result view can
+  // render the session — even when persistence was skipped to
+  // preserve a natural play's record (archive overwrite guard).
+  lastInMemoryResult = result;
+
+  // CRITICAL: consume freezes AFTER persisting the new result.
+  // Without this, a player who missed yesterday and plays today
+  // would silently lose their streak (the gap exists but the
+  // freeze isn't applied) — the exact bug the iOS app hit in v2.0
+  // and corrected in v2.4.
+  let usedFreezes = 0;
+  if (!state.isArchive) {
+    usedFreezes = consumeFreezesIfNeeded(loadResults(), TODAY_DAY_NUM);
+  }
+  if (usedFreezes > 0) {
+    setTimeout(() => showToast('Streak saved'), 1300);
+  }
+
+  // Evaluate achievements; collect newly-earned for the unlock banner.
+  const newOnes = refreshAchievements(loadResults(), TODAY_DAY_NUM);
+  result._newAchievements = newOnes;
+  lastInMemoryResult._newAchievements = newOnes;
 
   setTimeout(() => {
     $('gameView').style.transition = 'opacity 0.3s ease';
     $('gameView').style.opacity = '0';
     setTimeout(() => {
-      $('gameView').style.display = 'none';
       showResult(result);
+      // Restore opacity for next play. showScreen() flips display,
+      // so this just clears the fade for when we come back.
+      $('gameView').style.opacity = '1';
     }, 300);
   }, 600);
 }
 
+// JS-driven reveal cascade — controlled here, not via CSS nth-child,
+// because chain lengths vary 5–9. Same ~140ms cadence as iOS, with
+// the bridge fading in 50ms after its row (CSS transition-delay).
+let revealTimer = null;
+
+function startRevealCascade(rowCount) {
+  if (revealTimer) clearInterval(revealTimer);
+  const rows = document.querySelectorAll('#revealChain .reveal-row');
+  const bridges = document.querySelectorAll('#revealChain .reveal-bridge');
+  const rules = document.querySelectorAll('#revealChain .reveal-bridge-rule');
+  rows.forEach(r => r.classList.remove('revealed'));
+  bridges.forEach(b => b.classList.remove('revealed'));
+  rules.forEach(r => r.classList.remove('revealed'));
+
+  let i = 0;
+  setTimeout(() => {
+    revealTimer = setInterval(() => {
+      if (rows[i]) rows[i].classList.add('revealed');
+      // Bridge BEFORE this row appears with the row.
+      if (i > 0 && bridges[i - 1]) {
+        bridges[i - 1].classList.add('revealed');
+        if (rules[i - 1]) rules[i - 1].classList.add('revealed');
+      }
+      // Web vibrate API for the kick + the land — visual-only on
+      // platforms without it (most desktops).
+      if ((i === 1 || i === rowCount - 1) && navigator.vibrate) {
+        try { navigator.vibrate(8); } catch {}
+      }
+      i += 1;
+      if (i >= rowCount) {
+        clearInterval(revealTimer);
+        revealTimer = null;
+        // Theme reveal fades in after the cascade.
+        const themeEl = $('themeReveal');
+        if (themeEl.style.display !== 'none') {
+          requestAnimationFrame(() => themeEl.classList.add('visible'));
+        }
+      }
+    }, 140);
+  }, 200);
+}
+
 function showResult(result) {
-  $('resultView').style.display = 'block';
+  showScreen(Screen.Result);
   $('puzzleNumResult').textContent = `№ ${result.dayNum}`;
   $('headDifficultyResult').dataset.mode = result.difficulty;
   $('headDifficultyResultLabel').textContent = result.difficulty.charAt(0).toUpperCase() + result.difficulty.slice(1);
+  $('resultArchiveTag').style.display = result.isArchive ? '' : 'none';
 
-  $('resultScore').textContent = result.solved;
-  $('resultScoreOf').textContent = `/${result.total}`;
+  const solvedLinks = result.failed ? result.solved - 1 : result.total - 1;
+  const totalLinks = result.total - 1;
+  $('resultScore').textContent = String(solvedLinks);
+  $('resultScoreOf').textContent = `/${totalLinks}`;
 
   const tier = scoreTier(result);
   const tierEl = $('resultTier');
   tierEl.textContent = tier.label;
   tierEl.classList.toggle('fail', result.failed);
   $('resultModeTag').textContent = result.difficulty;
-  $('resultBlurb').textContent = tier.blurb;
 
-  // Meta line: strikes + hints used
+  // Meta line — same gameMeta() format used on Home, Stats, Friends.
   const hintsUsed = result.hintsUsed || 0;
   const strikeWord = result.strikes === 1 ? 'strike' : 'strikes';
-  const hintWord = hintsUsed === 1 ? 'hint' : 'hints';
-  $('resultMetaLine').innerHTML =
-    `<strong>${result.strikes}</strong> ${strikeWord} · <strong>${hintsUsed}</strong> ${hintWord} used`;
+  const hintsWord = hintsUsed === 1 ? 'hint' : 'hints';
+  let metaHtml = `<span class="num">${result.strikes}</span> ${strikeWord}`;
+  if (hintsUsed > 0) {
+    metaHtml += ` <span class="sep">·</span> <span class="num">${hintsUsed}</span> ${hintsWord}`;
+  }
+  $('resultMetaLine').innerHTML = metaHtml;
 
-  // Build emoji string — one square per link
-  const emojiHtml = result.chain.map((_, i) => {
-    if (i === 0) return `<span>🟦</span>`; // seed
-    if (i < result.solved) return `<span>🟩</span>`; // solved
-    return `<span>⬜</span>`; // unsolved
+  // Achievement unlock banner — only when newly earned.
+  const banner = $('unlockBannerSlot');
+  const earned = result._newAchievements || [];
+  if (earned.length > 0) {
+    const plural = earned.length === 1 ? '' : 's';
+    const rowsHtml = earned.map(a => `
+      <div class="unlock-banner-row">
+        <span class="unlock-banner-glyph">${escapeHtml(a.glyph)}</span>
+        <div class="unlock-banner-text">
+          <span class="unlock-banner-title">${escapeHtml(a.title)}</span>
+          <span class="unlock-banner-blurb">${escapeHtml(a.blurb)}</span>
+        </div>
+      </div>
+    `).join('');
+    banner.innerHTML = `
+      <button class="unlock-banner" id="unlockBannerBtn" type="button">
+        <div class="unlock-banner-eyebrow">▸ Achievement${plural} unlocked</div>
+        ${rowsHtml}
+        <div class="unlock-banner-foot">Tap to view all</div>
+      </button>
+    `;
+    $('unlockBannerBtn').addEventListener('click', () => {
+      renderAchievements();
+      $('achievementsModal').classList.add('show');
+    });
+  } else {
+    banner.innerHTML = '';
+  }
+
+  // Chain swatches — Rectangles instead of OS color emoji.
+  const swatchesEl = $('resultSwatches');
+  swatchesEl.innerHTML = result.chain.map((_, i) => {
+    let st = 'missed';
+    if (i === 0) st = 'seed';
+    else if (i < result.solved) st = 'solved';
+    return `<div class="chain-swatch" data-state="${st}"></div>`;
   }).join('');
-  $('resultEmojis').innerHTML = emojiHtml;
 
-  // Reveal full chain with the linking compound shown between each pair —
-  // turns the result into the "aha" moment of seeing what tied the words together.
+  // Full chain reveal — rows + compound bridges. JS-controlled
+  // cascade animation drives the .revealed class one row at a time.
   const revealEl = $('revealChain');
   revealEl.innerHTML = '';
   result.chain.forEach((word, i) => {
@@ -2594,7 +4251,7 @@ function showResult(result) {
     row.className = 'reveal-row';
     row.innerHTML = `
       <span class="reveal-rank">${String(i + 1).padStart(2, '0')}</span>
-      <span class="reveal-word">${word}</span>
+      <span class="reveal-word">${escapeHtml(word)}</span>
       <span class="reveal-mark ${isSolved ? 'solved' : 'unsolved'}">${isSolved ? '✓' : '✗'}</span>
     `;
     revealEl.appendChild(row);
@@ -2605,10 +4262,33 @@ function showResult(result) {
       bridge.className = 'reveal-bridge';
       bridge.innerHTML =
         `<span class="bridge-arrow">↳</span>` +
-        `<span class="bridge-compound">${word}${next}</span>`;
+        `<span class="bridge-compound">${escapeHtml(word + next)}</span>`;
       revealEl.appendChild(bridge);
+      const rule = document.createElement('div');
+      rule.className = 'reveal-bridge-rule';
+      revealEl.appendChild(rule);
     }
   });
+
+  // Theme reveal — ONLY on wins, AND only when the chain has a
+  // curated theme. Hiding it on a fail removes the free hint that
+  // a failing player would otherwise see before they hit Replay.
+  const themeEl = $('themeReveal');
+  themeEl.classList.remove('visible');
+  const theme = themeFor(result.dayNum);
+  if (theme && !result.failed) {
+    themeEl.style.display = '';
+    $('themeRevealName').textContent = theme;
+  } else {
+    themeEl.style.display = 'none';
+  }
+
+  startRevealCascade(result.chain.length);
+
+  // Persisted result + earned achievements just changed — refresh
+  // the Home cache so the Today card reflects them the moment the
+  // user returns to Home.
+  renderHome();
 }
 
 function scoreTier(result) {
@@ -2625,8 +4305,14 @@ function scoreTier(result) {
 }
 
 // ─── Share ───
+// Emojis 🟦🟩⬜ stay in the share string — that gets pasted into other
+// apps where the editorial discipline doesn't apply. In-app rendering
+// uses the .chain-swatch rectangles instead (set in showResult above).
 $('shareBtn').addEventListener('click', () => {
-  const r = loadResults()[`p${currentPuzzle.dayNum}`];
+  // Prefer the in-memory result (covers archive-replay-of-natural-play
+  // case where we intentionally don't persist the replay).
+  let r = lastInMemoryResult;
+  if (!r) r = loadResults()[`p${currentPuzzle.dayNum}`];
   if (!r) return;
 
   const emojis = r.chain.map((_, i) => {
@@ -2666,49 +4352,169 @@ function showToast(msg) {
 }
 
 $('replayBtn').addEventListener('click', () => {
-  const r = loadResults();
-  delete r[`p${currentPuzzle.dayNum}`];
-  saveResults(r);
-  window.location.reload();
+  const wasArchive = state.isArchive;
+  const replayDay = currentPuzzle.dayNum;
+  const all = loadResults();
+  const existing = all[`p${replayDay}`];
+  // Only wipe if it's the same flavor of play. An archive replay
+  // must never delete a natural play's record.
+  if (existing && existing.isArchive === wasArchive) {
+    delete all[`p${replayDay}`];
+    saveResults(all);
+  }
+  // Reset session-only state.
+  lastInMemoryResult = null;
+  if (wasArchive) {
+    $('archiveDiffModal').dataset.day = String(replayDay);
+    $('archiveDiffTitle').textContent = `№ ${replayDay}`;
+    showScreen(Screen.Home);
+    renderHome();
+    $('archiveDiffModal').classList.add('show');
+  } else {
+    $('diffPickSub').textContent = `№ ${replayDay} · 4 strikes · typos don't count`;
+    showScreen(Screen.Home);
+    renderHome();
+    $('diffPickModal').classList.add('show');
+  }
+});
+
+$('compareBtn').addEventListener('click', () => {
+  renderFriends();
+  $('friendsModal').classList.add('show');
 });
 
 // ─── Modals ───
 window.closeModal = id => $(id).classList.remove('show');
 
-$('navHelp').addEventListener('click', () => $('helpModal').classList.add('show'));
-$('navStats').addEventListener('click', () => { renderStats(); $('statsModal').classList.add('show'); });
-$('navFriends').addEventListener('click', () => { renderFriends(); $('friendsModal').classList.add('show'); });
-$('compareBtn').addEventListener('click', () => { renderFriends(); $('friendsModal').classList.add('show'); });
-
-[$('helpModal'), $('statsModal'), $('friendsModal')].forEach(m => {
+// Tap-outside-to-close for every sheet.
+[
+  $('helpModal'),
+  $('statsModal'),
+  $('friendsModal'),
+  $('achievementsModal'),
+  $('archiveModal'),
+  $('archiveDiffModal'),
+  $('moreModal'),
+  $('diffPickModal'),
+].forEach(m => {
+  if (!m) return;
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
 });
-
-if (!localStorage.getItem('linkd-helped')) {
-  setTimeout(() => $('helpModal').classList.add('show'), 600);
-  localStorage.setItem('linkd-helped', '1');
-}
 
 function renderStats() {
   const entries = Object.values(loadResults());
   const played = entries.length;
   const won = entries.filter(e => !e.failed).length;
-  const flawless = entries.filter(e => !e.failed && e.strikes === 0).length;
+  // "Flawless" matches the result-view tier: zero strikes AND zero hints.
+  const flawless = entries.filter(e => !e.failed && e.strikes === 0 && (e.hintsUsed || 0) === 0).length;
 
-  $('statsGrid').innerHTML = `
-    <div class="stat-card"><div class="stat-num">${played}</div><div class="stat-label">Played</div></div>
-    <div class="stat-card"><div class="stat-num">${won}</div><div class="stat-label">Won</div></div>
-    <div class="stat-card"><div class="stat-num">${flawless}</div><div class="stat-label">Flawless</div></div>
-  `;
+  if (entries.length === 0) {
+    $('statsBody').innerHTML = `
+      <div class="empty-state-cta">
+        <div class="label">No puzzles played yet</div>
+        <button id="statsPlayToday" type="button"><span>Play today</span><span>→</span></button>
+      </div>`;
+    $('statsPlayToday').addEventListener('click', () => {
+      closeModal('statsModal');
+      $('homeTodayCard').click();
+    });
+    return;
+  }
 
   const recent = entries.sort((a, b) => b.dayNum - a.dayNum).slice(0, 7);
-  $('recentList').innerHTML = recent.length
-    ? recent.map(e => `
-        <div class="recent-row">
-          <span class="recent-puzzle">№ ${e.dayNum}<span class="recent-mode">${e.difficulty}</span></span>
-          <span class="recent-score">${e.failed ? '✗' : '✓'} ${e.solved - 1}/${e.total - 1} · ${e.strikes}✗</span>
-        </div>`).join('')
-    : '<div class="empty-state">No puzzles played yet</div>';
+  $('statsBody').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">${played}</div><div class="stat-label">Played</div></div>
+      <div class="stat-card"><div class="stat-num">${won}</div><div class="stat-label">Won</div></div>
+      <div class="stat-card"><div class="stat-num">${flawless}</div><div class="stat-label">Flawless</div></div>
+    </div>
+    <h3>Recent Puzzles</h3>
+    <div>
+      ${recent.map(e => {
+        const solvedLinks = e.failed ? e.solved - 1 : e.total - 1;
+        const totalLinks = e.total - 1;
+        return `<div class="recent-row">
+          <span class="recent-puzzle">№ ${e.dayNum}<span class="recent-mode">${escapeHtml(e.difficulty)}</span></span>
+          <span class="recent-score">${solvedLinks}/${totalLinks} · ${escapeHtml(gameMeta(e.strikes, e.hintsUsed || 0))}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ─── Achievements sheet ────────────────────────────────────────
+function renderAchievements() {
+  const earned = loadEarnedAchievements();
+  $('achProgressEarned').textContent = String(earned.size);
+  $('achProgressTotal').textContent = String(ACHIEVEMENTS.length);
+  $('achGrid').innerHTML = ACHIEVEMENTS.map(a => {
+    const isEarned = earned.has(a.id);
+    return `
+      <div class="ach-tile${isEarned ? ' earned' : ''}">
+        <div class="ach-tile-head">
+          <span class="ach-tile-glyph">${escapeHtml(a.glyph)}</span>
+          ${isEarned ? '<span class="ach-tile-check">✓</span>' : ''}
+        </div>
+        <div class="ach-tile-title">${escapeHtml(a.title)}</div>
+        <div class="ach-tile-blurb">${escapeHtml(a.blurb)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Archive sheet ─────────────────────────────────────────────
+// Cap at 60 days back so the list stays scannable. The 225-puzzle
+// rotation means any further back would just be the rotation
+// repeating, which is more confusing than useful.
+function renderArchive() {
+  const today = TODAY_DAY_NUM;
+  const start = Math.max(1, today - 60);
+  const results = loadResults();
+  const days = [];
+  for (let d = today - 1; d >= start; d--) days.push(d);
+
+  $('archiveList').innerHTML = days.map(day => {
+    const r = results[`p${day}`];
+    if (r) {
+      const solvedLinks = r.failed ? r.solved - 1 : r.total - 1;
+      const totalLinks = r.total - 1;
+      return `
+        <button class="archive-row" data-archive-day="${day}" type="button">
+          <span class="archive-day">№ ${day}</span>
+          <span class="archive-meta">
+            <span class="archive-score${r.failed ? ' failed' : ''}">${solvedLinks}/${totalLinks}</span>
+            <span class="archive-mode">${escapeHtml(r.difficulty)}</span>
+            ${r.isArchive ? '<span class="archive-tag">· archive</span>' : ''}
+          </span>
+          <span class="archive-chevron">›</span>
+        </button>`;
+    }
+    return `
+      <button class="archive-row" data-archive-day="${day}" type="button">
+        <span class="archive-day">№ ${day}</span>
+        <span class="archive-unplayed">Unplayed</span>
+        <span class="archive-chevron">›</span>
+      </button>`;
+  }).join('');
+
+  document.querySelectorAll('[data-archive-day]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const day = parseInt(btn.dataset.archiveDay, 10);
+      closeModal('archiveModal');
+      $('archiveDiffModal').dataset.day = String(day);
+      $('archiveDiffTitle').textContent = `№ ${day}`;
+      $('archiveDiffModal').classList.add('show');
+    });
+  });
+}
+
+// ─── More sheet (settings + app store link) ────────────────────
+function renderMore() {
+  const banked = freezeAvailable();
+  $('freezeCount').textContent = String(banked);
+  $('freezeCaption').textContent = banked >= FREEZE_CAP
+    ? `Cap reached · refills monthly`
+    : `Refills monthly · cap ${FREEZE_CAP}`;
 }
 
 function parseFriendShare(text) {
@@ -2767,9 +4573,9 @@ function rankingScore(r) {
 function renderFriends() {
   const friends = loadFriends();
   const myResults = loadResults();
-  const todayKey = `p${currentPuzzle.dayNum}`;
+  const todayKey = `p${TODAY_DAY_NUM}`;
 
-  $('todayCompareTitle').textContent = `Today's Leaderboard — № ${currentPuzzle.dayNum}`;
+  $('todayCompareTitle').textContent = `Today's Leaderboard — № ${TODAY_DAY_NUM}`;
 
   const todayPlayers = [];
   if (myResults[todayKey]) todayPlayers.push({ name: 'You', result: myResults[todayKey], isYou: true });
@@ -2787,14 +4593,14 @@ function renderFriends() {
             <div class="left">
               <span class="ranking-rank">0${i + 1}</span>
               <span class="ranking-name">${escapeHtml(p.name)}</span>
-              <span class="ranking-mode">${r.difficulty}</span>
+              <span class="ranking-mode">${escapeHtml(r.difficulty)}</span>
             </div>
-            <span class="ranking-score">${linksGot}/${r.total - 1}<span class="of"> · ${r.strikes}✗</span></span>
+            <span class="ranking-score">${linksGot}/${r.total - 1}<span class="of"> · ${escapeHtml(gameMeta(r.strikes, r.hintsUsed || 0))}</span></span>
           </div>`;
       }).join('')
     : '<div class="empty-state">Nobody has played yet</div>';
 
-  // All-time: by win rate weighted by difficulty
+  // All-time: by win rate weighted by difficulty.
   const allPlayers = [];
   const myEntries = Object.values(myResults);
   if (myEntries.length) {
@@ -2820,14 +4626,17 @@ function renderFriends() {
           </div>
           <span class="ranking-score">${p.avg.toFixed(1)}<span class="of"> avg</span></span>
         </div>`).join('')
-    : '<div class="empty-state">Add a friend to see this</div>';
+    : `<div class="empty-state-cta">
+         <div class="label">Paste a friend's share string above</div>
+         <div class="sub">Leaderboards appear once they've sent you one</div>
+       </div>`;
 
   const friendNames = Object.keys(friends);
   $('friendsListSection').innerHTML = friendNames.length
     ? `<div class="leaderboard-section"><h3>Your Friends</h3>` + friendNames.map(n => `
         <div class="friend-list-row">
           <div><span class="ranking-name">${escapeHtml(n)}</span> <span class="ranking-mode" style="margin-left: 8px;">${Object.keys(friends[n]).length} result${Object.keys(friends[n]).length === 1 ? '' : 's'}</span></div>
-          <button class="friend-delete" data-name="${escapeHtml(n)}">×</button>
+          <button class="friend-delete" data-name="${escapeHtml(n)}" aria-label="Remove ${escapeHtml(n)}">×</button>
         </div>`).join('') + '</div>'
     : '';
 

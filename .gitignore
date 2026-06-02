@@ -1,0 +1,12 @@
+# Marketing system — runner-local idempotency markers (not part of the site)
+marketing/.state/
+
+# gstack browse skill session state (contains local tokens — never commit)
+.gstack/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store

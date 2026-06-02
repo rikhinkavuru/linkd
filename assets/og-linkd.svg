@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#f4ecd8"/>
+<rect x="0" y="0" width="1200" height="12" fill="#d62828"/>
+<text x="80" y="150" font-family="Archivo,Arial,sans-serif" font-weight="900" font-size="54" letter-spacing="-1" fill="#1a1a1a">LIN<tspan fill="#d62828" font-style="italic">K</tspan>D</text>
+<text x="80" y="330" font-family="Archivo,Arial,sans-serif" font-weight="900" font-size="104" fill="#1a1a1a">Build the <tspan fill="#d62828" font-style="italic">chain.</tspan></text>
+<text x="82" y="420" font-family="'JetBrains Mono',monospace" font-size="34" fill="#3a3a3a">A daily word-chain puzzle · hints &amp; answers</text>
+<g font-family="Archivo,Arial,sans-serif" font-weight="800" font-size="30" fill="#1a1a1a">
+<rect x="80" y="500" width="170" height="62" fill="#faf3e0" stroke="#1a1a1a" stroke-width="3"/><text x="110" y="541">BLACK</text>
+<text x="268" y="541" fill="#d62828" font-size="34">+</text>
+<rect x="300" y="500" width="120" height="62" fill="#faf3e0" stroke="#1a1a1a" stroke-width="3"/><text x="330" y="541">OUT</text>
+<text x="440" y="541" fill="#d62828" font-size="34">=</text>
+<rect x="476" y="500" width="250" height="62" fill="#d62828"/><text x="506" y="541" fill="#fff">BLACKOUT</text>
+</g>
+<text x="1120" y="560" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="26" fill="#6b665a">linkddaily.com</text>
+</svg>

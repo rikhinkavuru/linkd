@@ -1,0 +1,14 @@
+{
+  "name": "linkd-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Autonomous marketing system for Linkd (linkddaily.com) — SEO answer pages, social posting, email, and an analytics feedback loop. Zero runtime dependencies.",
+  "type": "commonjs",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "daily": "node scripts/daily.js",
+    "weekly": "node scripts/weekly.js",
+    "seo": "node scripts/daily.js --only=seo",
+    "dry": "node scripts/daily.js --dry-run"
+  }
+}
